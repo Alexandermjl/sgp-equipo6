@@ -1,0 +1,1268 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SGP · Sistema de Gestión de Procesos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Datos de conexión del proyecto (archivo aparte, ver config.ejemplo.js) -->
+<script src="config.js"></script>
+<style>
+  :root {
+    --grafito: #25282c; --grafito-2: #2f3337; --grafito-borde: #3a3f44; --menu-texto: #c3c8ce;
+    --naranja: #d0601a; --naranja-osc: #b04f14; --naranja-claro: #fbefe6;
+    --fondo: #f2f3f4; --panel: #ffffff; --borde: #d8dbde; --borde-suave: #e7e9eb;
+    --texto: #1f2328; --suave: #5d646d; --tenue: #8a9098;
+    --ok: #1d7444; --mal: #b3261e; --adv: #9a5b00; --neutro: #8a9098;
+    --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; background: var(--fondo); color: var(--texto); font-size: 14px; line-height: 1.4; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .layout { display: grid; grid-template-columns: 224px 1fr; min-height: 100vh; }
+  .layout > * { min-width: 0; }
+
+  /* Menú lateral */
+  aside { background: var(--grafito); color: var(--menu-texto); position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; }
+  .marca { padding: 16px 18px 14px; border-bottom: 1px solid var(--grafito-borde); }
+  .marca b { display: block; color: #fff; font-size: 15px; font-weight: 600; letter-spacing: .2px; }
+  .marca span { display: block; font-size: 11.5px; color: var(--tenue); margin-top: 2px; }
+  nav { padding: 10px 0; flex: 1; overflow-y: auto; }
+  .grupo { font-size: 11px; color: var(--tenue); padding: 12px 18px 5px; letter-spacing: .3px; }
+  nav button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: 0; border-left: 3px solid transparent; color: var(--menu-texto); padding: 7px 15px; cursor: pointer; font-size: 13.5px; }
+  nav button svg { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; opacity: .85; }
+  nav button:hover { background: var(--grafito-2); color: #fff; }
+  nav button.activo { background: var(--grafito-2); border-left-color: var(--naranja); color: #fff; font-weight: 500; }
+  .pie { border-top: 1px solid var(--grafito-borde); padding: 12px 18px 14px; font-size: 12px; }
+  .pie .yo b { color: #fff; font-weight: 500; font-size: 13px; }
+  .pie .yo div { color: var(--tenue); }
+  .pie .nivel { display: inline-block; margin-top: 6px; border: 1px solid var(--grafito-borde); padding: 1px 6px; color: var(--menu-texto); font-size: 11.5px; }
+  .pie .desc-nivel { color: var(--tenue); margin-top: 4px; }
+  .pie button { background: none; border: 1px solid var(--grafito-borde); color: var(--menu-texto); padding: 4px 10px; cursor: pointer; margin-top: 10px; font-size: 12px; }
+  .pie button:hover { color: #fff; border-color: var(--tenue); }
+
+  /* Barra superior y contenido */
+  .barra { height: 46px; background: var(--panel); border-bottom: 1px solid var(--borde); display: flex; align-items: center; justify-content: space-between; padding: 0 26px; font-size: 13px; color: var(--suave); }
+  .ruta b { color: var(--texto); font-weight: 500; }
+  .ruta i { font-style: normal; margin: 0 7px; color: var(--tenue); }
+  main { min-width: 0; }
+  #vista { padding: 20px 26px 30px; }
+  .cabecera { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .cabecera h2 { margin: 0; font-size: 19px; font-weight: 600; }
+  .cabecera .sub { color: var(--suave); margin-top: 2px; font-size: 13px; }
+  .cabecera .botones { display: flex; gap: 6px; }
+  .volver { background: none; border: 0; color: var(--suave); cursor: pointer; padding: 0; margin-bottom: 8px; font-size: 13px; }
+  .volver:hover { color: var(--naranja); }
+
+  /* Botones */
+  .btn { background: var(--naranja); color: #fff; border: 1px solid var(--naranja); border-radius: 2px; padding: 6px 13px; cursor: pointer; font-weight: 500; font-size: 13px; }
+  .btn:hover { background: var(--naranja-osc); border-color: var(--naranja-osc); }
+  .btn.sec { background: var(--panel); color: var(--texto); border-color: var(--borde); }
+  .btn.sec:hover { border-color: var(--suave); }
+  .btn.peligro { background: var(--panel); color: var(--mal); border-color: var(--borde); }
+  .btn.peligro:hover { border-color: var(--mal); }
+  .btn.mini { padding: 2px 8px; font-size: 12px; font-weight: 400; }
+  .btn:disabled { opacity: .6; cursor: default; }
+
+  /* Paneles y tablas */
+  .panel { background: var(--panel); border: 1px solid var(--borde); margin-bottom: 16px; }
+  .panel > h3 { margin: 0; padding: 9px 14px; font-size: 13.5px; font-weight: 600; border-bottom: 1px solid var(--borde); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .panel > h3 small { font-weight: 400; color: var(--suave); font-size: 12px; }
+  .panel.alerta { border-left: 3px solid var(--naranja); }
+  .filtros { display: flex; gap: 8px; padding: 9px 14px; border-bottom: 1px solid var(--borde); flex-wrap: wrap; background: #fafafa; }
+  .filtros select, .filtros input { padding: 5px 8px; border: 1px solid var(--borde); border-radius: 2px; background: #fff; font-size: 13px; }
+  .tabla-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 6px 12px; text-align: left; border-bottom: 1px solid var(--borde-suave); vertical-align: top; }
+  th { background: #f6f7f8; font-weight: 600; color: #3d434a; white-space: nowrap; border-bottom: 1px solid var(--borde); font-size: 12.5px; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr.clic { cursor: pointer; }
+  tbody tr.clic:hover td { background: #f7f8f9; }
+  tbody tr.clic:hover td:first-child { box-shadow: inset 3px 0 0 var(--naranja); }
+  td.acciones { white-space: nowrap; text-align: right; width: 1%; }
+  td.acciones .btn { margin-left: 4px; }
+  .cod { font-family: var(--mono); font-size: 12.5px; color: #3d434a; white-space: nowrap; }
+  .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tenue { color: var(--tenue); font-size: 12px; }
+  .vacio { padding: 18px 14px; color: var(--suave); }
+  .nota { padding: 7px 14px; border-top: 1px solid var(--borde-suave); font-size: 12px; color: var(--suave); }
+  .nota code, .fuente code { font-family: var(--mono); font-size: 11.5px; color: #3d434a; }
+  .fuente { font-size: 12px; color: var(--tenue); margin: -8px 0 16px; }
+
+  /* Estados: texto con un cuadro de color */
+  .est { white-space: nowrap; }
+  .est::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; background: var(--neutro); vertical-align: 0; }
+  .est.ok::before { background: var(--ok); }
+  .est.mal::before { background: var(--mal); }
+  .est.adv::before { background: var(--adv); }
+  .est.mal { color: var(--mal); }
+
+  /* Franja de resumen */
+  .resumen { display: grid; grid-template-columns: repeat(5, 1fr); background: var(--panel); border: 1px solid var(--borde); margin-bottom: 16px; }
+  .resumen div { padding: 10px 14px; border-right: 1px solid var(--borde-suave); }
+  .resumen div:last-child { border-right: 0; }
+  .resumen b { display: block; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .resumen span { color: var(--suave); font-size: 12px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid2 > .panel { margin-bottom: 16px; }
+
+  /* Ficha de detalle */
+  .ficha { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--panel); border: 1px solid var(--borde); margin-bottom: 16px; }
+  .ficha div { padding: 9px 14px; border-right: 1px solid var(--borde-suave); }
+  .ficha div:last-child { border-right: 0; }
+  .ficha span { display: block; font-size: 12px; color: var(--suave); margin-bottom: 2px; }
+  .descripcion { color: var(--suave); margin: 0 0 12px; max-width: 820px; }
+
+  /* Pestañas */
+  .pestanas { display: flex; border-bottom: 1px solid var(--borde); margin-bottom: 0; background: var(--panel); border: 1px solid var(--borde); border-bottom: 0; }
+  .pestanas button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 9px 16px; cursor: pointer; color: var(--suave); font-size: 13px; }
+  .pestanas button:hover { color: var(--texto); }
+  .pestanas button.activa { color: var(--texto); font-weight: 500; border-bottom-color: var(--naranja); }
+  .pestanas button em { font-style: normal; font-family: var(--mono); font-size: 11.5px; color: var(--tenue); margin-left: 4px; }
+  .pestana-cuerpo { border-top: 1px solid var(--borde); }
+  .fila-add { display: flex; gap: 8px; padding: 9px 14px; border-top: 1px solid var(--borde-suave); background: #fafafa; }
+  .fila-add select { flex: 1; max-width: 420px; padding: 5px 8px; border: 1px solid var(--borde); border-radius: 2px; background: #fff; }
+
+  /* Gráfica de indicador */
+  .grafica { padding: 12px 14px 6px; }
+  .grafica svg { width: 100%; height: auto; display: block; }
+  .grafica .ley { display: flex; gap: 18px; font-size: 12px; color: var(--suave); padding: 0 0 6px; }
+  .grafica .ley i { display: inline-block; width: 14px; height: 0; border-top: 2px solid #3d434a; vertical-align: middle; margin-right: 6px; }
+  .grafica .ley i.meta { border-top: 1px dashed var(--naranja); }
+  .grafica .ley i.pto { width: 8px; height: 8px; border: 0; background: var(--mal); }
+  #tip { position: fixed; pointer-events: none; background: var(--grafito); color: #fff; font-size: 12px; padding: 5px 8px; z-index: 40; display: none; }
+
+  .consulta-sql { background: #f6f7f8; border-bottom: 1px solid var(--borde-suave); color: #3d434a; font-family: var(--mono); font-size: 12px; padding: 8px 14px; margin: 0; white-space: pre-wrap; }
+
+  /* Panel lateral (formularios e historial) */
+  .fondo-modal { position: fixed; inset: 0; background: rgba(31,35,40,.35); z-index: 20; }
+  .lateral { position: absolute; top: 0; right: 0; bottom: 0; width: 100%; max-width: 440px; background: var(--panel); border-left: 1px solid var(--borde); display: flex; flex-direction: column; }
+  .lateral.ancho { max-width: 620px; }
+  .lateral header { padding: 13px 18px; border-bottom: 1px solid var(--borde); display: flex; justify-content: space-between; align-items: center; border-top: 3px solid var(--naranja); }
+  .lateral header h3 { margin: 0; font-size: 15px; font-weight: 600; }
+  .lateral header button { background: none; border: 0; font-size: 20px; cursor: pointer; color: var(--suave); line-height: 1; }
+  .lateral form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .lateral .cuerpo { padding: 16px 18px; overflow-y: auto; flex: 1; }
+  .lateral footer { padding: 11px 18px; border-top: 1px solid var(--borde); display: flex; justify-content: flex-end; gap: 8px; background: #fafafa; }
+  .dialogo { position: absolute; top: 120px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 440px; background: var(--panel); border: 1px solid var(--borde); border-top: 3px solid var(--mal); }
+  .dialogo header { padding: 11px 16px; border-bottom: 1px solid var(--borde); display: flex; justify-content: space-between; }
+  .dialogo header h3 { margin: 0; font-size: 14.5px; }
+  .dialogo header button { background: none; border: 0; font-size: 20px; cursor: pointer; color: var(--suave); line-height: 1; }
+  .dialogo .cuerpo { padding: 14px 16px; }
+  .dialogo footer { padding: 10px 16px; border-top: 1px solid var(--borde); display: flex; justify-content: flex-end; gap: 8px; }
+  .campo { margin-bottom: 12px; }
+  .campo label { display: block; font-weight: 500; margin-bottom: 4px; font-size: 12.5px; }
+  .campo input, .campo select, .campo textarea { width: 100%; padding: 6px 9px; border: 1px solid var(--borde); border-radius: 2px; background: #fff; }
+  .campo input:focus, .campo select:focus, .campo textarea:focus, .filtros select:focus, .filtros input:focus { outline: 2px solid var(--naranja-claro); border-color: var(--naranja); }
+  .campo input:disabled, .campo select:disabled { background: #f2f3f4; color: var(--suave); }
+  .selector-archivo { display: flex; align-items: center; gap: 10px; border: 1px dashed var(--borde); padding: 8px 9px; background: #fafafa; position: relative; }
+  .selector-archivo label { margin: 0; cursor: pointer; flex: none; }
+  .selector-archivo .nombre-archivo { flex: 1; min-width: 0; }
+  .selector-archivo input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .selector-archivo .nombre-archivo { color: var(--suave); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .campo .ayuda { font-size: 12px; color: var(--suave); margin-top: 3px; }
+  .campo.check label { display: flex; gap: 8px; align-items: center; font-weight: 400; }
+  .campo.check input { width: auto; }
+
+  /* Avisos */
+  #avisos { position: fixed; right: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 6px; z-index: 30; }
+  .aviso { background: var(--grafito); color: #fff; padding: 9px 13px; max-width: 380px; font-size: 13px; border-left: 3px solid var(--ok); }
+  .aviso.error { border-left-color: #f2683c; }
+
+  /* Pantallas de acceso */
+  .acceso { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--fondo); }
+  .config { width: 100%; max-width: 400px; background: var(--panel); border: 1px solid var(--borde); border-top: 3px solid var(--naranja); }
+  .config .encab { padding: 16px 22px 12px; border-bottom: 1px solid var(--borde-suave); }
+  .config .encab b { display: block; font-size: 16px; font-weight: 600; }
+  .config .encab span { color: var(--suave); font-size: 12.5px; }
+  .config form { padding: 16px 22px 20px; }
+  .config h2 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+  .config p { margin: 0 0 12px; font-size: 13px; color: var(--suave); }
+  .config p.error { color: var(--mal); }
+  .config .btn { padding: 7px 16px; }
+  .config .pie-acceso { padding: 9px 22px; border-top: 1px solid var(--borde-suave); font-size: 12px; color: var(--tenue); background: #fafafa; }
+  .cargando { padding: 30px; color: var(--suave); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; }
+    .grupo, .pie .nivel, .pie .desc-nivel, .pie .yo div { display: none; }
+    nav { display: flex; overflow-x: auto; padding: 0; }
+    nav button { white-space: nowrap; width: auto; border-left: 0; border-bottom: 3px solid transparent; }
+    nav button.activo { border-bottom-color: var(--naranja); }
+    .barra { padding: 0 16px; }
+    #vista { padding: 16px; }
+    .grid2 { grid-template-columns: 1fr; }
+    .resumen, .ficha { grid-template-columns: repeat(2, 1fr); }
+    .pestanas { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="avisos"></div>
+<div id="tip"></div>
+
+<script>
+/* =====================================================================
+   CONFIGURACIÓN
+   La URL y la clave pública (anon key) del proyecto se leen del archivo
+   config.js, que no se guarda en el repositorio. Si no existe, la
+   aplicación las pide al abrirse y las guarda en el navegador.
+   ===================================================================== */
+const CONFIG = window.SGP_CONFIG || { url: '', anonKey: '' };
+if (CONFIG.url) CONFIG.url = CONFIG.url.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+
+let sb = null;
+const estado = { vista: 'tablero', param: null, pestana: null };
+let yo = null;              // perfil del usuario que inició sesión (vista v_mi_perfil)
+let responsables = {};      // codigo_proceso -> codigo del responsable
+
+/* Permisos. La base de datos es la que realmente los aplica (políticas RLS).
+   Aquí solo se usan para mostrar u ocultar botones. */
+const esJefe = () => yo?.id_permiso === 'PER-01';
+const esAdmin = () => !!yo?.es_administrador;
+const esAuxiliar = () => yo?.id_permiso === 'PER-04';
+const esAdministrativo = () => yo?.id_permiso === 'PER-03';
+const esResp = p => !!p && responsables[p] === yo?.codigo_usuario;
+const puede = {
+  crearProceso: () => esJefe(),
+  editarProceso: p => esJefe() || esResp(p),
+  eliminarProceso: () => esJefe(),
+  participantes: p => esJefe() || esResp(p),
+  crearDocumento: () => esJefe() || esAdministrativo() || Object.values(responsables).includes(yo?.codigo_usuario),
+  editarDocumento: p => esJefe() || esResp(p) || esAdministrativo(),
+  eliminarDocumento: p => esJefe() || esResp(p),
+  crearEnProceso: () => esJefe() || Object.values(responsables).includes(yo?.codigo_usuario),
+  modificarEnProceso: p => esJefe() || esResp(p),
+  registrarMedicion: p => esJefe() || esResp(p) || esAdministrativo(),
+  catalogos: () => esJefe(),
+  // Usuarios: el administrador general administra todas las áreas. Un Jefe
+  // de área solo a los usuarios de su área que no son jefes. Nadie se
+  // modifica a sí mismo.
+  crearUsuario: () => esAdmin() || esJefe(),
+  administrarUsuario: u => u.codigo_usuario !== yo?.codigo_usuario &&
+    (esAdmin() || (esJefe() && !u.es_administrador && u.area === yo?.area && u.id_permiso !== 'PER-01')),
+};
+const DESCRIPCION_PERMISO = {
+  'PER-01': 'Procesos y usuarios de su área',
+  'PER-02': 'Modifica sus procesos',
+  'PER-03': 'Registra documentos y mediciones',
+  'PER-04': 'Solo consulta',
+};
+
+/* ---------------------------- utilidades ---------------------------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = v => v === null || v === undefined ? '' : String(v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const fecha = f => f ? new Date(f + 'T00:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fechaHora = f => f ? new Date(f).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+const mes = f => f ? new Date(f + 'T00:00:00').toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }) : '—';
+const mesCorto = f => new Date(f + 'T00:00:00').toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });
+const hoyLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const num = v => v === null || v === undefined ? '—' : Number(v).toLocaleString('es-MX', { maximumFractionDigits: 2 });
+const meta = i => `${i.sentido === 'mayor' ? '≥' : '≤'} ${num(i.meta)} ${esc(i.unidad)}`;
+const cumpleValor = (i, v) => i.sentido === 'mayor' ? +v >= +i.meta : +v <= +i.meta;
+
+function avisar(msg, error = false) {
+  const d = document.createElement('div');
+  d.className = 'aviso' + (error ? ' error' : '');
+  d.textContent = msg;
+  $('#avisos').appendChild(d);
+  setTimeout(() => d.remove(), error ? 7000 : 3500);
+}
+
+function traducirError(e) {
+  if (!e) return 'Error desconocido.';
+  const m = { '42501': 'No tiene permiso para realizar esta operación.',
+              '23505': 'Ya existe un registro con ese código o valor único.',
+              '23503': 'La operación viola una clave foránea: hay registros relacionados.',
+              '23514': 'Un valor no cumple las restricciones de la tabla (CHECK).',
+              '23502': 'Falta un campo obligatorio.' };
+  if (e.code === 'P0001') return e.message;
+  if (e.code === '23514' && /periodo_check/.test(e.message || '')) return 'El periodo debe ser el primer día del mes (por ejemplo, 01/11/2026).';
+  return (m[e.code] || 'Error de la base de datos.') + (e.details ? ' ' + e.details : e.message ? ' ' + e.message : '');
+}
+
+async function consultar(tabla, { filtros = {}, orden = null, desc = false } = {}) {
+  let q = sb.from(tabla).select('*');
+  for (const [k, v] of Object.entries(filtros)) q = q.eq(k, v);
+  if (orden) q = q.order(orden, { ascending: !desc });
+  const { data, error } = await q;
+  if (error) throw error;
+  return data;
+}
+
+async function ejecutar(promesa, exito) {
+  const { data, error } = await promesa;
+  if (error) { avisar(error.code === '42501' ? 'No tiene permiso para realizar esta operación.' : traducirError(error), true); return false; }
+  // En cambios y bajas, la base no devuelve error si las políticas impiden la
+  // operación: simplemente no modifica ninguna fila.
+  if (Array.isArray(data) && data.length === 0) { avisar('No tiene permiso para modificar este registro.', true); return false; }
+  if (exito) avisar(exito);
+  return true;
+}
+
+/* Archivos de los documentos (Supabase Storage, depósito "documentos") */
+const TIPOS_ARCHIVO = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg';
+const nombreArchivo = ruta => ruta ? ruta.split('/').pop().replace(/^\d+_/, '') : '';
+async function subirArchivo(archivo, proceso, documento) {
+  if (archivo.size > 10 * 1024 * 1024) { avisar('El archivo pesa más de 10 MB.', true); return null; }
+  const limpio = archivo.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_');
+  const ruta = `${proceso}/${documento}/${Date.now()}_${limpio}`;
+  const { error } = await sb.storage.from('documentos').upload(ruta, archivo, { contentType: archivo.type || undefined });
+  if (error) { avisar('No se pudo subir el archivo: ' + (/row-level|policy|403|Unauthorized/i.test(error.message || '') ? 'no tiene permiso.' : error.message), true); return null; }
+  return ruta;
+}
+async function abrirArchivo(ruta) {
+  // La ventana se abre antes de la consulta para que el navegador no la bloquee
+  const ventana = window.open('', '_blank');
+  const { data, error } = await sb.storage.from('documentos').createSignedUrl(ruta, 120);
+  if (error || !data?.signedUrl) { ventana?.close(); return avisar('No se pudo abrir el archivo.', true); }
+  if (ventana) ventana.location = data.signedUrl; else window.location = data.signedUrl;
+}
+const botonArchivo = d => d.ruta_archivo ? '<button class="btn sec mini" data-a>Abrir archivo</button>' : '';
+function enlazarArchivos(cont, filas) {
+  cont.querySelectorAll('[data-a]').forEach(b => b.onclick = () => abrirArchivo(filas[+b.closest('tr').dataset.i].ruta_archivo));
+}
+
+function siguienteCodigo(lista, campo, prefijo, digitos = 3) {
+  const max = lista.reduce((m, r) => {
+    const n = parseInt(String(r[campo]).replace(/\D/g, ''), 10);
+    return isNaN(n) ? m : Math.max(m, n);
+  }, 0);
+  return prefijo + String(max + 1).padStart(digitos, '0');
+}
+
+/* Estados: texto con un pequeño cuadro de color */
+function estResultado(r) {
+  if (!r) return '<span class="est">Sin auditoría</span>';
+  const c = r === 'Conforme' ? 'ok' : r === 'No conformidad mayor' ? 'mal' : 'adv';
+  return `<span class="est ${c}">${esc(r)}</span>`;
+}
+function estCumple(c) {
+  if (c === null || c === undefined) return '<span class="est">Sin medición</span>';
+  return c ? '<span class="est ok">En meta</span>' : '<span class="est mal">Fuera de meta</span>';
+}
+
+function tabla(cols, filas, { alClic = null, acciones = null, vacio = 'Sin registros.' } = {}) {
+  if (!filas.length) return `<div class="vacio">${vacio}</div>`;
+  const th = cols.map(c => `<th class="${c.n ? 'n' : ''}">${c.t}</th>`).join('') + (acciones ? '<th></th>' : '');
+  const tr = filas.map((f, i) => `<tr data-i="${i}" class="${alClic ? 'clic' : ''}">` +
+    cols.map(c => `<td class="${c.n ? 'n' : ''}">${c.f ? c.f(f) : esc(f[c.k])}</td>`).join('') +
+    (acciones ? `<td class="acciones">${acciones(f, i)}</td>` : '') + '</tr>').join('');
+  return `<div class="tabla-wrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`;
+}
+
+function enlazarFilas(contenedor, filas, alClic) {
+  contenedor.querySelectorAll('tbody tr.clic').forEach(tr => tr.addEventListener('click', e => {
+    if (e.target.closest('button')) return;
+    alClic(filas[+tr.dataset.i]);
+  }));
+}
+
+/* ------------------- panel lateral y diálogo ------------------------ */
+function abrirPanel(titulo, html, { ancho = false } = {}) {
+  cerrarPanel();
+  const f = document.createElement('div');
+  f.className = 'fondo-modal'; f.id = 'modal';
+  f.innerHTML = `<div class="lateral ${ancho ? 'ancho' : ''}"><header><h3>${esc(titulo)}</h3>
+    <button aria-label="Cerrar">&times;</button></header>${html}</div>`;
+  f.addEventListener('click', e => { if (e.target === f) cerrarPanel(); });
+  f.querySelector('header button').onclick = cerrarPanel;
+  document.body.appendChild(f);
+  return f;
+}
+function cerrarPanel() { $('#modal')?.remove(); }
+
+/* Formulario genérico: campos -> objeto listo para insertar/actualizar */
+async function formulario(titulo, campos, valores, alGuardar) {
+  const opciones = {};
+  for (const c of campos) if (c.opciones) opciones[c.n] = await c.opciones();
+  const html = campos.map(c => {
+    const v = valores[c.n] ?? c.def ?? '';
+    const dis = c.bloqueado ? 'disabled' : '';
+    const req = c.req ? 'required' : '';
+    let input;
+    if (c.tipo === 'select') {
+      input = `<select name="${c.n}" ${dis} ${req}><option value="">Seleccionar</option>` +
+        opciones[c.n].map(([val, et]) => `<option value="${esc(val)}" ${String(val) === String(v) ? 'selected' : ''}>${esc(et)}</option>`).join('') + '</select>';
+    } else if (c.tipo === 'textarea') {
+      input = `<textarea name="${c.n}" rows="3" ${dis} ${req}>${esc(v)}</textarea>`;
+    } else if (c.tipo === 'file') {
+      input = `<div class="selector-archivo" data-actual="${esc(c.actual || '')}"><label><input name="${c.n}" type="file" accept="${c.accept || ''}">
+        <span class="btn sec mini">Seleccionar archivo</span></label><span class="nombre-archivo"></span>
+        <button type="button" class="btn peligro mini quitar-archivo">Quitar</button></div>`;
+    } else if (c.tipo === 'check') {
+      return `<div class="campo check"><label><input type="checkbox" name="${c.n}" ${v ? 'checked' : ''}> ${c.et}</label></div>`;
+    } else {
+      input = `<input name="${c.n}" type="${c.tipo || 'text'}" value="${esc(v)}" ${c.paso ? `step="${c.paso}"` : ''} ${dis} ${req}>`;
+    }
+    return `<div class="campo"><label>${c.et}${c.req ? ' *' : ''}</label>${input}${c.ayuda ? `<div class="ayuda">${c.ayuda}</div>` : ''}</div>`;
+  }).join('');
+  const m = abrirPanel(titulo, `<form><div class="cuerpo">${html}</div><footer>
+    <button type="button" class="btn sec" data-cancelar>Cancelar</button>
+    <button type="submit" class="btn">Guardar</button></footer></form>`);
+  m.querySelector('[data-cancelar]').onclick = cerrarPanel;
+  // Selector de archivo: muestra el archivo elegido o el actual, y permite quitarlo
+  m.querySelectorAll('.selector-archivo').forEach(sel => {
+    const input = sel.querySelector('input'), nombre = sel.querySelector('.nombre-archivo'), quitar = sel.querySelector('.quitar-archivo');
+    const pintar = () => {
+      const elegido = input.files[0]?.name, actual = sel.dataset.actual;
+      nombre.textContent = elegido || (actual ? actual : 'Ningún archivo');
+      quitar.style.display = elegido || actual ? '' : 'none';
+    };
+    input.onchange = pintar;
+    quitar.onclick = () => {
+      if (input.files.length) input.value = '';
+      else { sel.dataset.actual = ''; sel.dataset.quitado = '1'; }
+      pintar();
+    };
+    pintar();
+  });
+  m.querySelector('form').onsubmit = async e => {
+    e.preventDefault();
+    const fd = e.target;
+    const obj = {}, archivos = {};
+    for (const c of campos) {
+      if (c.bloqueado) continue;
+      const el = fd.elements[c.n];
+      if (c.tipo === 'check') obj[c.n] = el.checked;
+      else if (c.tipo === 'file') { archivos[c.n] = el.files[0] || null; archivos.quitado = el.closest('.selector-archivo').dataset.quitado === '1'; continue; }
+      else if (c.tipo === 'number') obj[c.n] = el.value === '' ? null : Number(el.value);
+      else obj[c.n] = el.value.trim() === '' ? null : el.value.trim();
+    }
+    const btn = fd.querySelector('[type=submit]'); btn.disabled = true;
+    const ok = await alGuardar(obj, archivos);
+    btn.disabled = false;
+    if (ok) { cerrarPanel(); render(); }
+  };
+}
+
+function confirmar(msg, accion) {
+  cerrarPanel();
+  const f = document.createElement('div');
+  f.className = 'fondo-modal'; f.id = 'modal';
+  f.innerHTML = `<div class="dialogo"><header><h3>Confirmar eliminación</h3><button aria-label="Cerrar">&times;</button></header>
+    <div class="cuerpo">${esc(msg)}</div><footer>
+    <button class="btn sec" data-no>Cancelar</button><button class="btn peligro" data-si>Eliminar</button></footer></div>`;
+  document.body.appendChild(f);
+  f.querySelector('header button').onclick = f.querySelector('[data-no]').onclick = cerrarPanel;
+  f.querySelector('[data-si]').onclick = async () => { if (await accion()) { cerrarPanel(); render(); } };
+}
+
+/* Opciones para listas desplegables */
+const opc = {
+  procesos: async () => (await consultar('proceso', { orden: 'codigo_proceso' })).map(p => [p.codigo_proceso, `${p.codigo_proceso} · ${p.nombre_proceso}`]),
+  // Procesos en los que el usuario puede crear registros
+  misProcesos: async () => (await consultar('proceso', { orden: 'codigo_proceso' }))
+      .filter(p => esJefe() || p.codigo_usuario_responsable === yo?.codigo_usuario)
+      .map(p => [p.codigo_proceso, `${p.codigo_proceso} · ${p.nombre_proceso}`]),
+  procesosDocumento: async () => (await consultar('proceso', { orden: 'codigo_proceso' }))
+      .filter(p => esJefe() || esAdministrativo() || p.codigo_usuario_responsable === yo?.codigo_usuario)
+      .map(p => [p.codigo_proceso, `${p.codigo_proceso} · ${p.nombre_proceso}`]),
+  indicadoresMedibles: async () => (await consultar('indicador', { orden: 'codigo_indicador' }))
+      .filter(i => puede.registrarMedicion(i.codigo_proceso))
+      .map(i => [i.codigo_indicador, `${i.codigo_indicador} · ${i.nombre_indicador}`]),
+  responsables: async () => (await consultar('v_usuarios', { orden: 'codigo_usuario' }))
+      .filter(u => u.puede_ser_responsable && u.activo).map(u => [u.codigo_usuario, `${u.nombre} · ${u.nombre_cargo}`]),
+  usuarios: async () => (await consultar('v_usuarios', { orden: 'codigo_usuario' })).map(u => [u.codigo_usuario, `${u.nombre} · ${u.nombre_cargo}`]),
+  cargosAsignables: async () => (await consultar('cargo', { orden: 'nombre_cargo' }))
+      .filter(c => esAdmin() || (c.area === yo?.area && c.id_permiso !== 'PER-01'))
+      .map(c => [c.id_cargo, `${c.nombre_cargo} · ${c.area}`]),
+  tipos: async () => (await consultar('tipo_documento', { orden: 'nombre_tipo' })).map(t => [t.id_tipo, t.nombre_tipo]),
+  auditores: async () => (await consultar('auditor', { orden: 'codigo_auditor' })).map(a => [a.codigo_auditor, `${a.nombre_auditor} · ${a.especialidad}`]),
+};
+
+/* ============================== VISTAS =============================== */
+const ICONOS = {
+  tablero: '<rect x="2" y="2" width="5" height="5"/><rect x="9" y="2" width="5" height="5"/><rect x="2" y="9" width="5" height="5"/><rect x="9" y="9" width="5" height="5"/>',
+  procesos: '<path d="M2 4h12M2 8h12M2 12h8"/>',
+  documentos: '<path d="M4 1.5h5.5L12.5 4.5V14.5H4z"/><path d="M9.5 1.5v3h3M6 8h4.5M6 11h4.5"/>',
+  indicadores: '<path d="M2 14h12"/><path d="M3 11l3.5-4 3 2.5L13.5 4"/>',
+  auditorias: '<path d="M3 2.5h10v11H3z"/><path d="M5.5 7.5l2 2 3.5-4"/>',
+  usuarios: '<circle cx="8" cy="5.5" r="2.5"/><path d="M3 14c.6-2.8 2.6-4.2 5-4.2s4.4 1.4 5 4.2"/>',
+  consultas: '<circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/>',
+  bitacora: '<circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/>',
+};
+const VISTAS = {
+  tablero:     { t: 'Tablero',     g: 'Operación',      f: vistaTablero },
+  procesos:    { t: 'Procesos',    g: 'Operación',      f: vistaProcesos },
+  documentos:  { t: 'Documentos',  g: 'Operación',      f: vistaDocumentos },
+  indicadores: { t: 'Indicadores', g: 'Operación',      f: vistaIndicadores },
+  auditorias:  { t: 'Auditorías',  g: 'Operación',      f: vistaAuditorias },
+  usuarios:    { t: 'Usuarios',    g: 'Administración', f: vistaUsuarios, solo: () => !esAuxiliar() },
+  consultas:   { t: 'Consultas',   g: 'Administración', f: vistaConsultas },
+  bitacora:    { t: 'Bitácora',    g: 'Administración', f: vistaBitacora, solo: () => esJefe() },
+  // Páginas de detalle (no aparecen en el menú)
+  proceso:     { t: 'Proceso',     padre: 'procesos',    f: paginaProceso },
+  indicador:   { t: 'Indicador',   padre: 'indicadores', f: paginaIndicador },
+};
+
+function ir(vista, param = null, pestana = null) {
+  estado.vista = vista; estado.param = param; estado.pestana = pestana;
+  cerrarPanel(); window.scrollTo(0, 0); render();
+}
+
+function cabecera(titulo, sub, botones = '') {
+  return `<div class="cabecera"><div><h2>${titulo}</h2>${sub ? `<div class="sub">${sub}</div>` : ''}</div><div class="botones">${botones}</div></div>`;
+}
+
+/* ----------------------------- Tablero ------------------------------ */
+async function vistaTablero(el) {
+  const [res, ind, usu, docs, aud, alertas, act] = await Promise.all([
+    consultar('v_resumen_proceso', { orden: 'codigo_proceso' }),
+    consultar('v_cumplimiento_indicadores', { orden: 'codigo_indicador' }),
+    consultar('usuario'), consultar('documento'),
+    consultar('v_auditorias_detalle', { orden: 'fecha', desc: true }),
+    consultar('v_alertas_indicadores', { orden: 'meses_fuera_de_meta', desc: true }),
+    consultar('v_ultima_actualizacion'),
+  ]);
+  const ultima = Object.fromEntries(act.map(a => [a.codigo_proceso, a.ultima_actualizacion]));
+  const enMeta = ind.filter(i => i.cumple).length;
+  const fuera = ind.filter(i => i.cumple === false);
+  const nc = aud.filter(a => a.resultado !== 'Conforme').length;
+  el.innerHTML = cabecera('Tablero', `Situación de los procesos de la planta al ${new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}`) +
+    `<div class="resumen">
+      <div><b>${res.length}</b><span>Procesos</span></div>
+      <div><b>${usu.filter(u => u.activo).length}</b><span>Usuarios activos</span></div>
+      <div><b>${docs.length}</b><span>Documentos controlados</span></div>
+      <div><b>${enMeta} de ${ind.length}</b><span>Indicadores en meta</span></div>
+      <div><b>${nc}</b><span>Auditorías con no conformidad</span></div>
+    </div>
+    <div class="panel alerta"><h3>Alertas de indicadores <small>Dos o más meses seguidos fuera de meta</small></h3>${
+      alertas.length ? tabla([
+        { t: 'Indicador', f: a => `<span class="cod">${a.codigo_indicador}</span> ${esc(a.nombre_indicador)}` },
+        { t: 'Proceso', f: a => `<span class="cod">${a.codigo_proceso}</span> ${esc(a.nombre_proceso)}` },
+        { t: 'Responsable', k: 'responsable' },
+        { t: 'Meta', f: meta },
+        { t: 'Fuera de meta', f: a => `<span class="est mal">${a.meses_fuera_de_meta} meses</span> <span class="tenue">desde ${mes(a.desde)}</span>` },
+      ], alertas, { alClic: true }) : '<div class="vacio">Ningún indicador acumula dos meses seguidos fuera de meta.</div>'}</div>
+    <div class="grid2">
+      <div class="panel"><h3>Indicadores fuera de meta en su última medición <small>${fuera.length}</small></h3><div id="tf"></div></div>
+      <div class="panel"><h3>Auditorías recientes</h3><div id="ta"></div></div>
+    </div>
+    <div class="panel"><h3>Resumen por proceso</h3><div id="t"></div></div>`;
+  if (alertas.length) enlazarFilas($('.panel.alerta', el), alertas, a => ir('indicador', a.codigo_indicador));
+  const tf = $('#tf', el);
+  tf.innerHTML = tabla([
+    { t: 'Indicador', f: i => `<span class="cod">${i.codigo_indicador}</span> ${esc(i.nombre_indicador)}` },
+    { t: 'Meta', f: meta }, { t: 'Último valor', n: 1, f: i => `${num(i.ultimo_valor)} ${esc(i.unidad)}` },
+  ], fuera, { alClic: true, vacio: 'Todos los indicadores cumplen su meta.' });
+  enlazarFilas(tf, fuera, i => ir('indicador', i.codigo_indicador));
+  const recientes = aud.slice(0, 5);
+  const ta = $('#ta', el);
+  ta.innerHTML = tabla([
+    { t: 'Fecha', f: a => `<span class="num">${fecha(a.fecha)}</span>` },
+    { t: 'Proceso', f: a => `<span class="cod">${a.codigo_proceso}</span> ${esc(a.nombre_proceso)}` },
+    { t: 'Resultado', f: a => estResultado(a.resultado) },
+  ], recientes, { alClic: true });
+  enlazarFilas(ta, recientes, a => ir('proceso', a.codigo_proceso, 'auditorias'));
+  const t = $('#t', el);
+  t.innerHTML = tabla([
+    { t: 'Código', f: r => `<span class="cod">${r.codigo_proceso}</span>` },
+    { t: 'Proceso', k: 'nombre_proceso' },
+    { t: 'Responsable', k: 'responsable' },
+    { t: 'Documentos', n: 1, k: 'documentos' },
+    { t: 'Indicadores en meta', f: r => r.indicadores ? `<span class="${r.indicadores_en_meta < r.indicadores ? 'est mal' : 'est ok'}">${r.indicadores_en_meta} de ${r.indicadores}</span>` : '<span class="tenue">Sin indicadores</span>' },
+    { t: 'Última auditoría', f: r => estResultado(r.ultimo_resultado) + (r.ultima_auditoria ? ` <span class="tenue">${fecha(r.ultima_auditoria)}</span>` : '') },
+    { t: 'Última actualización', f: r => ultima[r.codigo_proceso] ? `<span class="num">${fechaHora(ultima[r.codigo_proceso])}</span>` : '<span class="tenue">—</span>' },
+  ], res, { alClic: true });
+  enlazarFilas(t, res, r => ir('proceso', r.codigo_proceso));
+}
+
+/* ----------------------------- Procesos ----------------------------- */
+async function vistaProcesos(el) {
+  const [res, act] = await Promise.all([
+    consultar('v_resumen_proceso', { orden: 'codigo_proceso' }), consultar('v_ultima_actualizacion')]);
+  const ultima = Object.fromEntries(act.map(a => [a.codigo_proceso, a.ultima_actualizacion]));
+  el.innerHTML = cabecera('Procesos', 'Seleccione un proceso para ver su detalle',
+    puede.crearProceso() ? '<button class="btn" id="nuevo">Nuevo proceso</button>' : '') +
+    `<div class="panel"><div class="filtros"><input id="fb" placeholder="Buscar por código, nombre o responsable" style="min-width:300px"></div><div id="t"></div></div>`;
+  const pintar = () => {
+    const fb = $('#fb', el).value.toLowerCase();
+    const f = res.filter(r => !fb || `${r.codigo_proceso} ${r.nombre_proceso} ${r.responsable}`.toLowerCase().includes(fb));
+    const t = $('#t', el);
+    t.innerHTML = tabla([
+      { t: 'Código', f: r => `<span class="cod">${r.codigo_proceso}</span>` },
+      { t: 'Proceso', k: 'nombre_proceso' },
+      { t: 'Responsable', k: 'responsable' },
+      { t: 'Participantes', n: 1, k: 'participantes' },
+      { t: 'Documentos', n: 1, k: 'documentos' },
+      { t: 'Indicadores', n: 1, k: 'indicadores' },
+      { t: 'Última actualización', f: r => ultima[r.codigo_proceso] ? `<span class="num">${fechaHora(ultima[r.codigo_proceso])}</span>` : '<span class="tenue">—</span>' },
+    ], f, { alClic: true, acciones: r => (puede.editarProceso(r.codigo_proceso) ? '<button class="btn sec mini" data-e>Editar</button>' : '') + (puede.eliminarProceso() ? '<button class="btn peligro mini" data-d>Eliminar</button>' : '') });
+    enlazarFilas(t, f, r => ir('proceso', r.codigo_proceso));
+    t.querySelectorAll('tbody tr').forEach(tr => {
+      const r = f[+tr.dataset.i];
+      tr.querySelector('[data-e]') && (tr.querySelector('[data-e]').onclick = () => formProceso(r));
+      tr.querySelector('[data-d]') && (tr.querySelector('[data-d]').onclick = () => confirmar(
+        `¿Eliminar el proceso ${r.codigo_proceso} "${r.nombre_proceso}"? Se eliminarán también sus documentos, indicadores, participaciones y auditorías (ON DELETE CASCADE).`,
+        () => ejecutar(sb.from('proceso').delete().eq('codigo_proceso', r.codigo_proceso).select(), 'Proceso eliminado.')));
+    });
+  };
+  $('#fb', el).addEventListener('input', pintar);
+  pintar();
+  $('#nuevo', el) && ($('#nuevo', el).onclick = () => formProceso(null, res));
+}
+
+function formProceso(r, lista = []) {
+  const nuevo = !r;
+  formulario(nuevo ? 'Nuevo proceso' : `Editar proceso ${r.codigo_proceso}`, [
+    { n: 'codigo_proceso', et: 'Código', req: true, bloqueado: !nuevo, def: nuevo ? siguienteCodigo(lista, 'codigo_proceso', 'P-') : '' },
+    { n: 'nombre_proceso', et: 'Nombre del proceso', req: true },
+    { n: 'descripcion', et: 'Descripción', tipo: 'textarea' },
+    { n: 'codigo_usuario_responsable', et: 'Responsable', tipo: 'select', req: true, opciones: opc.responsables, bloqueado: !esJefe(), },
+  ], r || {}, obj => nuevo
+    ? ejecutar(sb.from('proceso').insert(obj), 'Proceso registrado.')
+    : ejecutar(sb.from('proceso').update(obj).eq('codigo_proceso', r.codigo_proceso).select(), 'Proceso actualizado.'));
+}
+
+/* ---------------------- Detalle de un proceso ----------------------- */
+async function paginaProceso(el) {
+  const cod = estado.param;
+  const [[p], part, docs, inds, auds, usuarios, act] = await Promise.all([
+    consultar('v_resumen_proceso', { filtros: { codigo_proceso: cod } }),
+    consultar('v_procesos_por_usuario', { filtros: { codigo_proceso: cod } }),
+    consultar('v_documentos_por_proceso', { filtros: { codigo_proceso: cod }, orden: 'codigo_documento' }),
+    consultar('v_cumplimiento_indicadores', { filtros: { codigo_proceso: cod }, orden: 'codigo_indicador' }),
+    consultar('v_auditorias_detalle', { filtros: { codigo_proceso: cod }, orden: 'fecha', desc: true }),
+    consultar('v_usuarios', { orden: 'nombre' }),
+    consultar('v_ultima_actualizacion', { filtros: { codigo_proceso: cod } }),
+  ]);
+  if (!p) { el.innerHTML = '<div class="vacio">El proceso no existe o fue eliminado.</div>'; return; }
+  const cargo = Object.fromEntries(usuarios.map(u => [u.codigo_usuario, u.nombre_cargo]));
+  const miembros = [...part].sort((a, b) => (a.rol === 'Responsable' ? -1 : 0) - (b.rol === 'Responsable' ? -1 : 0) || a.nombre_usuario.localeCompare(b.nombre_usuario));
+  const yaEstan = new Set(part.map(x => x.codigo_usuario));
+  const pest = [
+    ['participantes', 'Participantes', part.length],
+    ['documentos', 'Documentos', docs.length],
+    ['indicadores', 'Indicadores', inds.length],
+    ['auditorias', 'Auditorías', auds.length],
+    ...(esJefe() ? [['cambios', 'Cambios', null]] : []),
+  ];
+  const actual = pest.some(x => x[0] === estado.pestana) ? estado.pestana : 'participantes';
+  el.innerHTML = `<button class="volver" id="volver">← Procesos</button>` +
+    cabecera(`<span class="cod" style="font-size:17px">${p.codigo_proceso}</span> &nbsp;${esc(p.nombre_proceso)}`, '',
+      puede.editarProceso(cod) ? '<button class="btn sec" id="editar">Editar proceso</button>' : '') +
+    `<p class="descripcion">${esc(p.descripcion || '')}</p>
+    <div class="ficha">
+      <div><span>Responsable</span>${esc(p.responsable)}</div>
+      <div><span>Indicadores en meta</span>${p.indicadores ? `${p.indicadores_en_meta} de ${p.indicadores}` : 'Sin indicadores'}</div>
+      <div><span>Última auditoría</span>${estResultado(p.ultimo_resultado)}${p.ultima_auditoria ? ` <span class="tenue">${fecha(p.ultima_auditoria)}</span>` : ''}</div>
+      <div><span>Última actualización</span>${act[0]?.ultima_actualizacion ? fechaHora(act[0].ultima_actualizacion) : '<span class="tenue">Sin cambios desde la carga inicial</span>'}</div>
+    </div>
+    <div class="pestanas">${pest.map(([k, t, n]) => `<button data-p="${k}" class="${k === actual ? 'activa' : ''}">${t}${n !== null ? `<em>${n}</em>` : ''}</button>`).join('')}</div>
+    <div class="panel pestana-cuerpo" id="pc"></div>`;
+  $('#volver', el).onclick = () => ir('procesos');
+  $('#editar', el) && ($('#editar', el).onclick = () => formProceso(p));
+  el.querySelectorAll('.pestanas button').forEach(b => b.onclick = () => { estado.pestana = b.dataset.p; render(); });
+  const pc = $('#pc', el);
+
+  if (actual === 'participantes') {
+    pc.innerHTML = tabla([
+      { t: 'Código', f: x => `<span class="cod">${x.codigo_usuario}</span>` },
+      { t: 'Nombre', k: 'nombre_usuario' }, { t: 'Cargo', f: x => esc(cargo[x.codigo_usuario] || '') },
+      { t: 'Rol en el proceso', f: x => x.rol === 'Responsable' ? '<b>Responsable</b>' : 'Participante' },
+    ], miembros, { acciones: x => x.rol === 'Participante' && puede.participantes(cod) ? '<button class="btn peligro mini" data-q>Quitar</button>' : '', vacio: 'Sin participantes.' }) +
+      (puede.participantes(cod) ? `<div class="fila-add"><select id="nuevoPart"><option value="">Agregar participante</option>${
+        usuarios.filter(u => !yaEstan.has(u.codigo_usuario) && u.activo).map(u => `<option value="${u.codigo_usuario}">${esc(u.nombre)} · ${esc(u.nombre_cargo)}</option>`).join('')
+      }</select><button class="btn mini" id="addPart">Agregar</button></div>` : '');
+    pc.querySelectorAll('tbody tr').forEach(tr => {
+      const x = miembros[+tr.dataset.i], b = tr.querySelector('[data-q]');
+      if (b) b.onclick = async () => {
+        if (await ejecutar(sb.from('usuario_participa_proceso').delete()
+          .eq('codigo_usuario', x.codigo_usuario).eq('codigo_proceso', cod).select(), 'Participante retirado.')) render();
+      };
+    });
+    $('#addPart', pc) && ($('#addPart', pc).onclick = async () => {
+      const u = $('#nuevoPart', pc).value;
+      if (!u) return;
+      if (await ejecutar(sb.from('usuario_participa_proceso').insert({ codigo_usuario: u, codigo_proceso: cod }), 'Participante agregado.')) render();
+    });
+  }
+
+  if (actual === 'documentos') {
+    pc.innerHTML = tabla([
+      { t: 'Código', f: d => `<span class="cod">${d.codigo_documento}</span>` }, { t: 'Documento', k: 'nombre_documento' },
+      { t: 'Tipo', k: 'nombre_tipo' }, { t: 'Versión', f: d => `<span class="cod">${esc(d.version)}</span>` }, { t: 'Emisión', f: d => fecha(d.fecha_emision) },
+    ], docs, { acciones: d => botonArchivo(d) + '<button class="btn sec mini" data-h>Historial</button>' + (puede.editarDocumento(cod) ? '<button class="btn sec mini" data-e>Editar</button>' : ''), vacio: 'El proceso no tiene documentos.' }) +
+      (puede.editarDocumento(cod) && puede.crearDocumento() ? '<div class="fila-add"><button class="btn mini" id="addDoc">Nuevo documento en este proceso</button></div>' : '');
+    enlazarArchivos(pc, docs);
+    pc.querySelectorAll('tbody tr').forEach(tr => {
+      const d = docs[+tr.dataset.i];
+      tr.querySelector('[data-h]').onclick = () => historialDocumento(d);
+      tr.querySelector('[data-e]') && (tr.querySelector('[data-e]').onclick = () => formDocumento(d));
+    });
+    $('#addDoc', pc) && ($('#addDoc', pc).onclick = async () => formDocumento(null, await consultar('documento'), cod));
+  }
+
+  if (actual === 'indicadores') {
+    pc.innerHTML = tabla([
+      { t: 'Código', f: i => `<span class="cod">${i.codigo_indicador}</span>` }, { t: 'Indicador', k: 'nombre_indicador' },
+      { t: 'Meta', f: meta }, { t: 'Último valor', n: 1, f: i => `${num(i.ultimo_valor)} ${esc(i.unidad)}` },
+      { t: 'Periodo', f: i => i.ultimo_periodo ? mes(i.ultimo_periodo) : '—' }, { t: 'Estado', f: i => estCumple(i.cumple) },
+    ], inds, { alClic: true, vacio: 'El proceso no tiene indicadores.' });
+    enlazarFilas(pc, inds, i => ir('indicador', i.codigo_indicador));
+  }
+
+  if (actual === 'auditorias') {
+    pc.innerHTML = tabla([
+      { t: 'Fecha', f: a => fecha(a.fecha) }, { t: 'Auditor', f: a => `${esc(a.nombre_auditor)} <span class="tenue">${esc(a.especialidad)}</span>` },
+      { t: 'Resultado', f: a => estResultado(a.resultado) }, { t: 'Hallazgos', k: 'hallazgos' },
+    ], auds, { vacio: 'El proceso aún no ha sido auditado.' });
+  }
+
+  if (actual === 'cambios') {
+    const codInd = new Set(inds.map(i => i.codigo_indicador));
+    const regs = ((await sb.from('v_bitacora').select('*').order('id_bitacora', { ascending: false }).limit(500)).data || [])
+      .filter(r => [r.datos_nuevos, r.datos_anteriores].some(d => d && (d.codigo_proceso === cod || (r.tabla === 'medicion_indicador' && codInd.has(d.codigo_indicador)))));
+    pc.innerHTML = tablaBitacora(regs, 'No hay cambios registrados para este proceso desde la carga inicial.');
+  }
+}
+
+/* ----------------------------- Usuarios ----------------------------- */
+async function vistaUsuarios(el) {
+  const us = await consultar('v_usuarios', { orden: 'codigo_usuario' });
+  el.innerHTML = cabecera('Usuarios', 'Personal con acceso al sistema, su cargo, área y nivel de permiso',
+    puede.crearUsuario() ? '<button class="btn" id="nuevo">Nuevo usuario</button>' : '') + '<div class="panel"><div class="filtros"><select id="fa"><option value="">Todas las áreas</option>' +
+    [...new Set(us.map(u => u.area))].sort().map(a => `<option>${esc(a)}</option>`).join('') + '</select></div><div id="t"></div></div>';
+  const pintar = () => {
+    const fa = $('#fa', el).value;
+    const f = us.filter(u => !fa || u.area === fa);
+    const t = $('#t', el);
+    t.innerHTML = tabla([
+      { t: 'Código', f: u => `<span class="cod">${u.codigo_usuario}</span>` },
+      { t: 'Nombre', k: 'nombre' }, { t: 'Correo', f: u => `<span class="tenue" style="font-size:12.5px">${esc(u.email)}</span>` },
+      { t: 'Cargo', k: 'nombre_cargo' }, { t: 'Área', k: 'area' },
+      { t: 'Permiso', f: u => esc(u.nombre_permiso) + (u.es_administrador ? ' <span class="tenue">· Administrador general</span>' : '') },
+      { t: 'Estado', f: u => u.activo ? '<span class="est ok">Activo</span>' : '<span class="est mal">Inactivo</span>' },
+    ], f, { acciones: u => puede.administrarUsuario(u) ? '<button class="btn sec mini" data-e>Editar</button><button class="btn peligro mini" data-d>Eliminar</button>' : '' });
+    t.querySelectorAll('tbody tr').forEach(tr => {
+      const u = f[+tr.dataset.i];
+      if (!tr.querySelector('[data-e]')) return;
+      tr.querySelector('[data-e]').onclick = () => formUsuario(u);
+      tr.querySelector('[data-d]').onclick = () => confirmar(`¿Eliminar al usuario ${u.nombre}?`,
+        () => ejecutar(sb.from('usuario').delete().eq('codigo_usuario', u.codigo_usuario).select(), 'Usuario eliminado.'));
+    });
+  };
+  $('#fa', el).onchange = pintar;
+  pintar();
+  $('#nuevo', el) && ($('#nuevo', el).onclick = () => formUsuario(null, us));
+}
+function formUsuario(u, lista = []) {
+  const nuevo = !u;
+  formulario(nuevo ? 'Nuevo usuario' : `Editar usuario ${u.codigo_usuario}`, [
+    { n: 'codigo_usuario', et: 'Código', req: true, bloqueado: !nuevo, def: nuevo ? siguienteCodigo(lista, 'codigo_usuario', 'U-') : '' },
+    { n: 'nombre', et: 'Nombre completo', req: true },
+    { n: 'email', et: 'Correo electrónico', tipo: 'email', req: true },
+    { n: 'id_cargo', et: 'Cargo', tipo: 'select', req: true, opciones: opc.cargosAsignables },
+    { n: 'activo', et: 'Usuario activo', tipo: 'check', def: true },
+    ...(esAdmin() ? [{ n: 'es_administrador', et: 'Administrador general', tipo: 'check', def: false }] : []),
+  ], u || {}, obj => nuevo
+    ? ejecutar(sb.from('usuario').insert(obj), 'Usuario registrado.')
+    : ejecutar(sb.from('usuario').update(obj).eq('codigo_usuario', u.codigo_usuario).select(), 'Usuario actualizado.'));
+}
+
+/* ---------------------------- Documentos ---------------------------- */
+async function vistaDocumentos(el) {
+  const [docs, procs, tipos] = await Promise.all([
+    consultar('v_documentos_por_proceso', { orden: 'codigo_documento' }), opc.procesos(), opc.tipos()]);
+  el.innerHTML = cabecera('Documentos', 'Control documental del Sistema de Gestión de Calidad',
+    puede.crearDocumento() ? '<button class="btn" id="nuevo">Nuevo documento</button>' : '') +
+    `<div class="panel"><div class="filtros">
+      <select id="fp"><option value="">Todos los procesos</option>${procs.map(([v, e]) => `<option value="${v}">${esc(e)}</option>`).join('')}</select>
+      <select id="ft"><option value="">Todos los tipos</option>${tipos.map(([v, e]) => `<option value="${v}">${esc(e)}</option>`).join('')}</select>
+      <input id="fb" placeholder="Buscar por nombre">
+    </div><div id="t"></div></div>`;
+  const pintar = () => {
+    const fp = $('#fp', el).value, ft = $('#ft', el).value, fb = $('#fb', el).value.toLowerCase();
+    const f = docs.filter(d => (!fp || d.codigo_proceso === fp) && (!ft || d.id_tipo === ft) && (!fb || d.nombre_documento.toLowerCase().includes(fb)));
+    const t = $('#t', el);
+    t.innerHTML = tabla([
+      { t: 'Código', f: d => `<span class="cod">${d.codigo_documento}</span>` },
+      { t: 'Documento', k: 'nombre_documento' }, { t: 'Tipo', k: 'nombre_tipo' },
+      { t: 'Proceso', f: d => `<span class="cod">${d.codigo_proceso}</span> ${esc(d.nombre_proceso)}` },
+      { t: 'Versión', f: d => `<span class="cod">${esc(d.version)}</span>` }, { t: 'Emisión', f: d => fecha(d.fecha_emision) },
+    ], f, { acciones: d => botonArchivo(d) + '<button class="btn sec mini" data-h>Historial</button>' +
+        (puede.editarDocumento(d.codigo_proceso) ? '<button class="btn sec mini" data-e>Editar</button>' : '') +
+        (puede.eliminarDocumento(d.codigo_proceso) ? '<button class="btn peligro mini" data-d>Eliminar</button>' : '') });
+    enlazarArchivos(t, f);
+    t.querySelectorAll('tbody tr').forEach(tr => {
+      const d = f[+tr.dataset.i];
+      tr.querySelector('[data-h]').onclick = () => historialDocumento(d);
+      tr.querySelector('[data-e]') && (tr.querySelector('[data-e]').onclick = () => formDocumento(d));
+      tr.querySelector('[data-d]') && (tr.querySelector('[data-d]').onclick = () => confirmar(`¿Eliminar el documento ${d.codigo_documento}?`,
+        async () => {
+          const ok = await ejecutar(sb.from('documento').delete().eq('codigo_documento', d.codigo_documento).select(), 'Documento eliminado.');
+          if (ok && d.ruta_archivo) await sb.storage.from('documentos').remove([d.ruta_archivo]);
+          return ok;
+        }));
+    });
+  };
+  ['#fp', '#ft', '#fb'].forEach(s => $(s, el).addEventListener('input', pintar));
+  pintar();
+  $('#nuevo', el) && ($('#nuevo', el).onclick = () => formDocumento(null, docs));
+}
+async function historialDocumento(d) {
+  const vers = await consultar('v_historial_documentos', { filtros: { codigo_documento: d.codigo_documento }, orden: 'fecha_emision', desc: true });
+  const filas = [{ version: d.version, fecha_emision: d.fecha_emision, ruta_archivo: d.ruta_archivo, estado: '<span class="est ok">Vigente</span>', quien: '—' },
+    ...vers.map(v => ({ version: v.version, fecha_emision: v.fecha_emision, ruta_archivo: v.ruta_archivo,
+      estado: `<span class="est">Reemplazada el ${new Date(v.fecha_reemplazo).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</span>`, quien: esc(v.reemplazada_por || '—') }))];
+  abrirPanel(`Historial de versiones · ${d.codigo_documento}`, `<div class="cuerpo">
+    <p style="margin-top:0"><b>${esc(d.nombre_documento)}</b><br><span class="tenue">${esc(d.nombre_tipo || '')} · Proceso ${esc(d.codigo_proceso)}</span></p>
+    <div class="panel">${tabla([{ t: 'Versión', f: x => `<span class="cod">${esc(x.version)}</span>` }, { t: 'Emisión', f: x => fecha(x.fecha_emision) },
+      { t: 'Estado', f: x => x.estado }, { t: 'Reemplazada por', f: x => x.quien }], filas, { acciones: x => botonArchivo(x) })}</div></div>`, { ancho: true });
+  enlazarArchivos($('#modal'), filas);
+}
+function formDocumento(d, lista = [], proceso = '') {
+  const nuevo = !d;
+  formulario(nuevo ? 'Nuevo documento' : `Editar documento ${d.codigo_documento}`, [
+    { n: 'codigo_documento', et: 'Código', req: true, bloqueado: !nuevo, def: nuevo ? siguienteCodigo(lista, 'codigo_documento', 'D-') : '' },
+    { n: 'nombre_documento', et: 'Nombre', req: true },
+    { n: 'id_tipo', et: 'Tipo de documento', tipo: 'select', req: true, opciones: opc.tipos },
+    { n: 'codigo_proceso', et: 'Proceso al que pertenece', tipo: 'select', req: true, opciones: opc.procesosDocumento, def: proceso },
+    { n: 'version', et: 'Versión', req: true, def: '1.0', ayuda: nuevo ? '' : 'Si cambia la versión, la anterior se guarda en el historial.' },
+    { n: 'fecha_emision', et: 'Fecha de emisión', tipo: 'date', req: true, def: hoyLocal() },
+    { n: 'archivo', et: 'Archivo', tipo: 'file', accept: TIPOS_ARCHIVO, actual: nombreArchivo(d?.ruta_archivo) },
+  ], d || {}, async (obj, archivos) => {
+    let borrar = null;
+    if (archivos.archivo) {
+      const ruta = await subirArchivo(archivos.archivo, obj.codigo_proceso, nuevo ? obj.codigo_documento : d.codigo_documento);
+      if (!ruta) return false;
+      obj.ruta_archivo = ruta;
+    } else if (archivos.quitado) {
+      obj.ruta_archivo = null;
+    }
+    // Si se reemplaza o quita el archivo sin cambiar de versión, el anterior ya no
+    // se necesita. Si cambia la versión, el historial lo conserva.
+    if (!nuevo && d.ruta_archivo && 'ruta_archivo' in obj && obj.version === d.version) borrar = d.ruta_archivo;
+    const ok = nuevo
+      ? await ejecutar(sb.from('documento').insert(obj), 'Documento registrado.')
+      : await ejecutar(sb.from('documento').update(obj).eq('codigo_documento', d.codigo_documento).select(), 'Documento actualizado.');
+    if (ok && borrar) await sb.storage.from('documentos').remove([borrar]);
+    return ok;
+  });
+}
+
+/* ---------------------------- Indicadores --------------------------- */
+async function vistaIndicadores(el) {
+  const inds = await consultar('v_cumplimiento_indicadores', { orden: 'codigo_indicador' });
+  el.innerHTML = cabecera('Indicadores de desempeño', 'Cumplimiento según la última medición registrada',
+    (puede.crearEnProceso() || esAdministrativo() ? '<button class="btn sec" id="medir">Registrar medición</button>' : '') +
+    (puede.crearEnProceso() ? '<button class="btn" id="nuevo">Nuevo indicador</button>' : '')) +
+    `<div class="panel"><div class="filtros"><select id="fe"><option value="">Todos los estados</option><option value="no">Fuera de meta</option><option value="si">En meta</option></select></div><div id="t"></div></div>`;
+  const pintar = () => {
+    const fe = $('#fe', el).value;
+    const f = inds.filter(i => !fe || (fe === 'si' ? i.cumple === true : i.cumple === false));
+    const t = $('#t', el);
+    t.innerHTML = tabla([
+      { t: 'Código', f: i => `<span class="cod">${i.codigo_indicador}</span>` },
+      { t: 'Indicador', k: 'nombre_indicador' },
+      { t: 'Proceso', f: i => `<span class="cod">${i.codigo_proceso}</span>` },
+      { t: 'Meta', f: meta },
+      { t: 'Último valor', n: 1, f: i => i.ultimo_valor === null ? '—' : `${num(i.ultimo_valor)} ${esc(i.unidad)}` },
+      { t: 'Periodo', f: i => i.ultimo_periodo ? `<span class="tenue">${mes(i.ultimo_periodo)}</span>` : '—' },
+      { t: 'Promedio', n: 1, f: i => num(i.promedio) },
+      { t: 'Estado', f: i => estCumple(i.cumple) },
+    ], f, { alClic: true, acciones: i => puede.modificarEnProceso(i.codigo_proceso) ? '<button class="btn sec mini" data-e>Editar</button><button class="btn peligro mini" data-d>Eliminar</button>' : '' });
+    enlazarFilas(t, f, i => ir('indicador', i.codigo_indicador));
+    t.querySelectorAll('tbody tr').forEach(tr => {
+      const i = f[+tr.dataset.i];
+      if (!tr.querySelector('[data-e]')) return;
+      tr.querySelector('[data-e]').onclick = () => formIndicador(i);
+      tr.querySelector('[data-d]').onclick = () => confirmar(`¿Eliminar el indicador ${i.codigo_indicador} y todas sus mediciones?`,
+        () => ejecutar(sb.from('indicador').delete().eq('codigo_indicador', i.codigo_indicador).select(), 'Indicador eliminado.'));
+    });
+  };
+  $('#fe', el).onchange = pintar;
+  pintar();
+  $('#nuevo', el) && ($('#nuevo', el).onclick = () => formIndicador(null, inds));
+  $('#medir', el) && ($('#medir', el).onclick = () => formMedicion());
+}
+function formIndicador(i, lista = []) {
+  const nuevo = !i;
+  formulario(nuevo ? 'Nuevo indicador' : `Editar indicador ${i.codigo_indicador}`, [
+    { n: 'codigo_indicador', et: 'Código', req: true, bloqueado: !nuevo, def: nuevo ? siguienteCodigo(lista, 'codigo_indicador', 'IND-') : '' },
+    { n: 'nombre_indicador', et: 'Nombre', req: true },
+    { n: 'codigo_proceso', et: 'Proceso', tipo: 'select', req: true, opciones: opc.misProcesos },
+    { n: 'unidad', et: 'Unidad de medida', req: true, ayuda: 'Ejemplos: %, ppm, h, unidades/h' },
+    { n: 'meta', et: 'Meta', tipo: 'number', paso: '0.01', req: true },
+    { n: 'sentido', et: 'Criterio de cumplimiento', tipo: 'select', req: true,
+      opciones: async () => [['mayor', 'Mayor o igual a la meta'], ['menor', 'Menor o igual a la meta']] },
+    { n: 'frecuencia', et: 'Frecuencia', tipo: 'select', req: true, def: 'Mensual',
+      opciones: async () => [['Mensual', 'Mensual'], ['Trimestral', 'Trimestral'], ['Anual', 'Anual']] },
+  ], i || {}, obj => nuevo
+    ? ejecutar(sb.from('indicador').insert(obj), 'Indicador registrado.')
+    : ejecutar(sb.from('indicador').update(obj).eq('codigo_indicador', i.codigo_indicador).select(), 'Indicador actualizado.'));
+}
+function formMedicion(cod = '') {
+  const periodo = hoyLocal().slice(0, 8) + '01';
+  formulario('Registrar medición', [
+    { n: 'codigo_indicador', et: 'Indicador', tipo: 'select', req: true, opciones: opc.indicadoresMedibles },
+    { n: 'periodo', et: 'Periodo (primer día del mes)', tipo: 'date', req: true, def: periodo },
+    { n: 'valor', et: 'Valor medido', tipo: 'number', paso: '0.01', req: true },
+  ], { codigo_indicador: cod }, obj => ejecutar(sb.from('medicion_indicador').insert(obj), 'Medición registrada.'));
+}
+
+/* Gráfica de línea: valores medidos contra la meta (una sola serie) */
+function graficaIndicador(i, meds) {
+  if (meds.length < 2) return '<div class="vacio">Se necesitan al menos dos mediciones para mostrar la evolución.</div>';
+  const W = 860, H = 230, iz = 56, de = 16, ar = 14, ab = 28;
+  const vals = meds.map(m => +m.valor).concat(+i.meta);
+  let mn = Math.min(...vals), mx = Math.max(...vals);
+  if (mx === mn) { mn -= 1; mx += 1; }
+  if (mn >= 0 && mn < (mx - mn)) mn = 0;            // si los valores están cerca de cero, el eje empieza en cero
+  const crudo = (mx - mn) / 4, pot = 10 ** Math.floor(Math.log10(crudo));
+  const paso = [1, 2, 2.5, 5, 10].map(k => k * pot).find(k => k >= crudo);
+  mn = Math.floor(mn / paso) * paso; mx = Math.ceil(mx / paso) * paso;
+  if (mx - mn < paso * 3) mx = mn + paso * 3;
+  const x = k => iz + k * (W - iz - de) / (meds.length - 1);
+  const y = v => ar + (mx - v) * (H - ar - ab) / (mx - mn);
+  const ticks = []; for (let t = mn; t <= mx + paso / 2; t += paso) ticks.push(+t.toFixed(6));
+  const linea = meds.map((m, k) => `${k ? 'L' : 'M'}${x(k).toFixed(1)},${y(+m.valor).toFixed(1)}`).join(' ');
+  return `<div class="grafica"><div class="ley"><span><i></i>Valor medido (${esc(i.unidad)})</span><span><i class="meta"></i>Meta ${meta(i)}</span><span><i class="pto"></i>Fuera de meta</span></div>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolución de ${esc(i.nombre_indicador)} contra la meta">
+      ${ticks.map(t => `<line x1="${iz}" x2="${W - de}" y1="${y(t)}" y2="${y(t)}" stroke="#eceef0"/><text x="${iz - 8}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="#8a9098">${num(t)}</text>`).join('')}
+      <line x1="${iz}" x2="${W - de}" y1="${y(+i.meta)}" y2="${y(+i.meta)}" stroke="#d0601a" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <path d="${linea}" fill="none" stroke="#3d434a" stroke-width="2" stroke-linejoin="round"/>
+      ${meds.map((m, k) => {
+        const ok = cumpleValor(i, m.valor);
+        return `<circle cx="${x(k)}" cy="${y(+m.valor)}" r="${ok ? 3.5 : 5}" fill="${ok ? '#3d434a' : '#b3261e'}" stroke="#fff" stroke-width="2"/>` +
+          `<circle cx="${x(k)}" cy="${y(+m.valor)}" r="14" fill="transparent" data-tip="${esc(mes(m.periodo))}: ${num(m.valor)} ${esc(i.unidad)} · ${ok ? 'En meta' : 'Fuera de meta'}"/>` +
+          `<text x="${x(k)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="#8a9098">${mesCorto(m.periodo)}</text>`;
+      }).join('')}
+    </svg></div>`;
+}
+function enlazarTips(el) {
+  const tip = $('#tip');
+  el.querySelectorAll('[data-tip]').forEach(c => {
+    c.addEventListener('mousemove', e => { tip.textContent = c.dataset.tip; tip.style.display = 'block'; tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY - 30) + 'px'; });
+    c.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
+}
+
+/* --------------------- Detalle de un indicador ---------------------- */
+async function paginaIndicador(el) {
+  const cod = estado.param;
+  const [[i], meds] = await Promise.all([
+    consultar('v_cumplimiento_indicadores', { filtros: { codigo_indicador: cod } }),
+    consultar('medicion_indicador', { filtros: { codigo_indicador: cod }, orden: 'periodo' }),
+  ]);
+  if (!i) { el.innerHTML = '<div class="vacio">El indicador no existe o fue eliminado.</div>'; return; }
+  const fueraSeguidos = (() => { let n = 0; for (let k = meds.length - 1; k >= 0 && !cumpleValor(i, meds[k].valor); k--) n++; return n; })();
+  const recientes = [...meds].reverse();
+  el.innerHTML = `<button class="volver" id="volver">← Indicadores</button>` +
+    cabecera(`<span class="cod" style="font-size:17px">${i.codigo_indicador}</span> &nbsp;${esc(i.nombre_indicador)}`,
+      `Proceso <a href="#" id="irProc" style="color:inherit"><span class="cod">${i.codigo_proceso}</span> ${esc(i.nombre_proceso)}</a> · Frecuencia ${esc(i.frecuencia).toLowerCase()}`,
+      (puede.registrarMedicion(i.codigo_proceso) ? '<button class="btn" id="otra">Registrar medición</button>' : '') +
+      (puede.modificarEnProceso(i.codigo_proceso) ? '<button class="btn sec" id="editarInd">Editar indicador</button>' : '')) +
+    `<div class="ficha">
+      <div><span>Meta</span>${meta(i)}</div>
+      <div><span>Última medición</span>${num(i.ultimo_valor)} ${esc(i.unidad)} <span class="tenue">${mes(i.ultimo_periodo)}</span></div>
+      <div><span>Promedio (${i.mediciones} mediciones)</span>${num(i.promedio)} ${esc(i.unidad)}</div>
+      <div><span>Estado</span>${estCumple(i.cumple)}${fueraSeguidos >= 2 ? ` <span class="tenue">${fueraSeguidos} meses seguidos</span>` : ''}</div>
+    </div>
+    <div class="panel"><h3>Evolución contra la meta</h3>${graficaIndicador(i, meds)}</div>
+    <div class="panel"><h3>Mediciones registradas</h3><div id="tm"></div></div>`;
+  $('#volver', el).onclick = () => ir('indicadores');
+  $('#irProc', el).onclick = e => { e.preventDefault(); ir('proceso', i.codigo_proceso, 'indicadores'); };
+  $('#otra', el) && ($('#otra', el).onclick = () => formMedicion(i.codigo_indicador));
+  $('#editarInd', el) && ($('#editarInd', el).onclick = () => formIndicador(i));
+  enlazarTips(el);
+  const tm = $('#tm', el);
+  tm.innerHTML = tabla([
+    { t: 'Periodo', f: x => mes(x.periodo) }, { t: 'Valor', n: 1, f: x => `${num(x.valor)} ${esc(i.unidad)}` },
+    { t: 'Estado', f: x => estCumple(cumpleValor(i, x.valor)) }],
+    recientes, { acciones: () => puede.modificarEnProceso(i.codigo_proceso) ? '<button class="btn peligro mini" data-d>Eliminar</button>' : '', vacio: 'Sin mediciones.' });
+  tm.querySelectorAll('[data-d]').forEach(b => {
+    const x = recientes[+b.closest('tr').dataset.i];
+    b.onclick = () => confirmar(`¿Eliminar la medición de ${mes(x.periodo)}?`,
+      () => ejecutar(sb.from('medicion_indicador').delete().eq('id_medicion', x.id_medicion).select(), 'Medición eliminada.'));
+  });
+}
+
+/* ---------------------------- Auditorías ---------------------------- */
+async function vistaAuditorias(el) {
+  const [auds, auditores] = await Promise.all([
+    consultar('v_auditorias_detalle', { orden: 'fecha', desc: true }), consultar('auditor', { orden: 'codigo_auditor' })]);
+  el.innerHTML = cabecera('Auditorías', 'Evaluaciones realizadas a los procesos por el cuerpo de auditores',
+    puede.crearEnProceso() ? '<button class="btn" id="nuevo">Registrar auditoría</button>' : '') +
+    `<div class="panel"><h3>Historial de auditorías</h3><div id="t"></div></div>
+     <div class="panel"><h3>Catálogo de auditores
+       ${puede.catalogos() ? '<button class="btn sec mini" id="nuevoAud">Nuevo auditor</button>' : ''}</h3><div id="ta"></div></div>`;
+  const t = $('#t', el);
+  t.innerHTML = tabla([
+    { t: 'Fecha', f: a => fecha(a.fecha) },
+    { t: 'Proceso', f: a => `<span class="cod">${a.codigo_proceso}</span> ${esc(a.nombre_proceso)}` },
+    { t: 'Auditor', f: a => `${esc(a.nombre_auditor)} <span class="tenue">${esc(a.especialidad)}</span>` },
+    { t: 'Resultado', f: a => estResultado(a.resultado) }, { t: 'Hallazgos', k: 'hallazgos' },
+  ], auds, { acciones: a => puede.modificarEnProceso(a.codigo_proceso) ? '<button class="btn sec mini" data-e>Editar</button><button class="btn peligro mini" data-d>Eliminar</button>' : '' });
+  t.querySelectorAll('tbody tr').forEach(tr => {
+    const a = auds[+tr.dataset.i];
+    if (!tr.querySelector('[data-e]')) return;
+    tr.querySelector('[data-e]').onclick = () => formAuditoria(a);
+    tr.querySelector('[data-d]').onclick = () => confirmar(`¿Eliminar la auditoría del ${fecha(a.fecha)} al proceso ${a.codigo_proceso}?`,
+      () => ejecutar(sb.from('auditoria').delete().eq('id_auditoria', a.id_auditoria).select(), 'Auditoría eliminada.'));
+  });
+  const ta = $('#ta', el);
+  ta.innerHTML = tabla([
+    { t: 'Código', f: a => `<span class="cod">${a.codigo_auditor}</span>` }, { t: 'Nombre', k: 'nombre_auditor' },
+    { t: 'Especialidad', k: 'especialidad' }, { t: 'Correo', f: a => `<span class="tenue" style="font-size:12.5px">${esc(a.email)}</span>` },
+  ], auditores, { acciones: () => puede.catalogos() ? '<button class="btn sec mini" data-e>Editar</button><button class="btn peligro mini" data-d>Eliminar</button>' : '' });
+  if (puede.catalogos()) ta.querySelectorAll('tbody tr').forEach(tr => {
+    const a = auditores[+tr.dataset.i];
+    tr.querySelector('[data-e]').onclick = () => formAuditor(a);
+    tr.querySelector('[data-d]').onclick = () => confirmar(`¿Eliminar al auditor ${a.nombre_auditor}?`,
+      () => ejecutar(sb.from('auditor').delete().eq('codigo_auditor', a.codigo_auditor).select(), 'Auditor eliminado.'));
+  });
+  $('#nuevo', el) && ($('#nuevo', el).onclick = () => formAuditoria(null));
+  $('#nuevoAud', el) && ($('#nuevoAud', el).onclick = () => formAuditor(null, auditores));
+}
+function formAuditoria(a) {
+  const nuevo = !a;
+  formulario(nuevo ? 'Registrar auditoría' : 'Editar auditoría', [
+    { n: 'codigo_proceso', et: 'Proceso auditado', tipo: 'select', req: true, opciones: opc.misProcesos },
+    { n: 'codigo_auditor', et: 'Auditor', tipo: 'select', req: true, opciones: opc.auditores },
+    { n: 'fecha', et: 'Fecha', tipo: 'date', req: true, def: hoyLocal() },
+    { n: 'resultado', et: 'Resultado', tipo: 'select', req: true,
+      opciones: async () => ['Conforme', 'No conformidad menor', 'No conformidad mayor'].map(x => [x, x]) },
+    { n: 'hallazgos', et: 'Hallazgos', tipo: 'textarea' },
+  ], a || {}, obj => nuevo
+    ? ejecutar(sb.from('auditoria').insert(obj), 'Auditoría registrada.')
+    : ejecutar(sb.from('auditoria').update(obj).eq('id_auditoria', a.id_auditoria).select(), 'Auditoría actualizada.'));
+}
+function formAuditor(a, lista = []) {
+  const nuevo = !a;
+  formulario(nuevo ? 'Nuevo auditor' : `Editar auditor ${a.codigo_auditor}`, [
+    { n: 'codigo_auditor', et: 'Código', req: true, bloqueado: !nuevo, def: nuevo ? siguienteCodigo(lista, 'codigo_auditor', 'AUD-') : '' },
+    { n: 'nombre_auditor', et: 'Nombre', req: true },
+    { n: 'especialidad', et: 'Especialidad', tipo: 'select', req: true,
+      opciones: async () => ['Calidad', 'Procesos', 'Seguridad', 'Ambiental', 'Administrativo'].map(x => [x, x]) },
+    { n: 'email', et: 'Correo electrónico', tipo: 'email', req: true },
+  ], a || {}, obj => nuevo
+    ? ejecutar(sb.from('auditor').insert(obj), 'Auditor registrado.')
+    : ejecutar(sb.from('auditor').update(obj).eq('codigo_auditor', a.codigo_auditor).select(), 'Auditor actualizado.'));
+}
+
+/* ----------------------------- Consultas ---------------------------- */
+async function vistaConsultas(el) {
+  const [usuarios, procesos] = await Promise.all([opc.usuarios(), opc.procesos()]);
+  const sel = (id, ops) => `<select id="${id}">${ops.map(([v, e]) => `<option value="${v}">${esc(e)}</option>`).join('')}</select>`;
+  el.innerHTML = cabecera('Consultas operativas', 'Información de los procesos, documentos, indicadores y auditores') + `
+    <div class="panel"><h3>1. Procesos a cargo de un usuario</h3>
+      <div class="filtros">${sel('c1', usuarios)}</div><div id="r1"></div></div>
+    <div class="panel"><h3>2. Documentos vinculados a un proceso</h3>
+      <div class="filtros">${sel('c2', procesos)}</div><div id="r2"></div></div>
+    <div class="panel"><h3>3. Cumplimiento de indicadores (KPI) por proceso</h3>
+      <div class="filtros">${sel('c3', [['', 'Todos los procesos'], ...procesos])}</div><div id="r3"></div></div>
+    <div class="panel"><h3>4. Auditores responsables de evaluar cada proceso</h3>
+      <div class="filtros">${sel('c4', [['', 'Todos los procesos'], ...procesos])}</div><div id="r4"></div></div>`;
+
+  const c1 = async () => $('#r1', el).innerHTML = tabla([
+    { t: 'Código', f: r => `<span class="cod">${r.codigo_proceso}</span>` }, { t: 'Proceso', k: 'nombre_proceso' },
+    { t: 'Rol', f: r => r.rol === 'Responsable' ? '<b>Responsable</b>' : 'Participante' }],
+    await consultar('v_procesos_por_usuario', { filtros: { codigo_usuario: $('#c1', el).value }, orden: 'codigo_proceso' }),
+    { vacio: 'El usuario no tiene procesos asignados.' });
+  const c2 = async () => $('#r2', el).innerHTML = tabla([
+    { t: 'Código', f: r => `<span class="cod">${r.codigo_documento}</span>` }, { t: 'Documento', k: 'nombre_documento' },
+    { t: 'Tipo', k: 'nombre_tipo' }, { t: 'Versión', f: r => `<span class="cod">${esc(r.version)}</span>` }],
+    await consultar('v_documentos_por_proceso', { filtros: { codigo_proceso: $('#c2', el).value }, orden: 'codigo_documento' }));
+  const c3 = async () => {
+    const p = $('#c3', el).value;
+    $('#r3', el).innerHTML = tabla([
+      { t: 'Proceso', f: r => `<span class="cod">${r.codigo_proceso}</span>` }, { t: 'Indicador', k: 'nombre_indicador' },
+      { t: 'Meta', f: meta },
+      { t: 'Último', n: 1, f: r => num(r.ultimo_valor) }, { t: 'Promedio', n: 1, f: r => num(r.promedio) }, { t: 'Estado', f: r => estCumple(r.cumple) }],
+      await consultar('v_cumplimiento_indicadores', { filtros: p ? { codigo_proceso: p } : {}, orden: 'codigo_indicador' }));
+  };
+  const c4 = async () => {
+    const p = $('#c4', el).value;
+    $('#r4', el).innerHTML = tabla([
+      { t: 'Proceso', f: r => `<span class="cod">${r.codigo_proceso}</span> ${esc(r.nombre_proceso)}` },
+      { t: 'Auditor', k: 'nombre_auditor' }, { t: 'Especialidad', k: 'especialidad' },
+      { t: 'Auditorías', n: 1, k: 'auditorias_realizadas' }, { t: 'Última', f: r => fecha(r.ultima_auditoria) },
+      { t: 'Último resultado', f: r => estResultado(r.ultimo_resultado) }],
+      await consultar('v_auditores_por_proceso', { filtros: p ? { codigo_proceso: p } : {}, orden: 'codigo_proceso' }),
+      { vacio: 'El proceso aún no ha sido auditado.' });
+  };
+  $('#c1', el).onchange = c1; $('#c2', el).onchange = c2; $('#c3', el).onchange = c3; $('#c4', el).onchange = c4;
+  await Promise.all([c1(), c2(), c3(), c4()]);
+}
+
+/* ----------------------------- Bitácora ----------------------------- */
+function tablaBitacora(regs, vacio) {
+  const detalle = r => {
+    if (r.operacion === 'INSERT') return '<span class="tenue">Registro creado</span>';
+    if (r.operacion === 'DELETE') return '<span class="tenue">Registro eliminado</span>';
+    const a = r.datos_anteriores || {}, n = r.datos_nuevos || {};
+    return Object.keys(n).filter(k => JSON.stringify(a[k]) !== JSON.stringify(n[k]))
+      .map(k => `<span class="cod">${esc(k)}</span>: ${esc(a[k] ?? '—')} → <b>${esc(n[k] ?? '—')}</b>`).join('<br>') || '—';
+  };
+  const op = o => `<span class="est ${o === 'INSERT' ? 'ok' : o === 'DELETE' ? 'mal' : 'adv'}">${{ INSERT: 'Alta', UPDATE: 'Cambio', DELETE: 'Baja' }[o]}</span>`;
+  return tabla([
+    { t: 'Fecha', f: r => `<span class="num">${fechaHora(r.fecha)}</span>` },
+    { t: 'Usuario', k: 'usuario' }, { t: 'Tabla', f: r => `<span class="cod">${esc(r.tabla)}</span>` },
+    { t: 'Operación', f: r => op(r.operacion) }, { t: 'Registro', f: r => `<span class="cod">${esc(r.clave)}</span>` },
+    { t: 'Detalle', f: detalle },
+  ], regs, { vacio });
+}
+async function vistaBitacora(el) {
+  const regs = (await sb.from('v_bitacora').select('*').order('id_bitacora', { ascending: false }).limit(300)).data || [];
+  const tablas = [...new Set(regs.map(r => r.tabla))].sort();
+  const usuarios = [...new Set(regs.map(r => r.usuario))].sort();
+  el.innerHTML = cabecera('Bitácora de cambios', 'Altas, bajas y cambios registrados en el sistema (últimos 300)') +
+    `<div class="panel"><div class="filtros">
+      <select id="fbt"><option value="">Todas las tablas</option>${tablas.map(t => `<option>${esc(t)}</option>`).join('')}</select>
+      <select id="fbu"><option value="">Todos los usuarios</option>${usuarios.map(t => `<option>${esc(t)}</option>`).join('')}</select>
+    </div><div id="t"></div></div>`;
+  const pintar = () => {
+    const ft = $('#fbt', el).value, fu = $('#fbu', el).value;
+    $('#t', el).innerHTML = tablaBitacora(regs.filter(r => (!ft || r.tabla === ft) && (!fu || r.usuario === fu)), 'Todavía no hay cambios registrados.');
+  };
+  $('#fbt', el).onchange = $('#fbu', el).onchange = pintar;
+  pintar();
+}
+
+/* ============================ ARRANQUE ============================== */
+function leerConfig() {
+  if (CONFIG.url && CONFIG.anonKey) return CONFIG;
+  try { const c = JSON.parse(localStorage.getItem('pia_supabase') || 'null'); if (c?.url && c?.anonKey) return c; } catch (e) {}
+  return null;
+}
+
+const ENCABEZADO_ACCESO = `<div class="encab"><b>SGP · Sistema de Gestión de Procesos</b><span>Planta de manufactura · Caso de estudio PIA</span></div>`;
+
+function pantallaConfig(msg = '') {
+  $('#app').innerHTML = `<div class="acceso"><div class="config">${ENCABEZADO_ACCESO}
+    <form id="fc">
+      <h2>Conectar con la base de datos</h2>
+      <p>Copie estos datos desde su proyecto de Supabase: <b>Project Settings → API</b>.</p>
+      ${msg ? `<p class="error">${esc(msg)}</p>` : ''}
+      <div class="campo"><label>Project URL</label><input name="url" placeholder="https://xxxxxxxx.supabase.co" required></div>
+      <div class="campo"><label>Clave pública (anon / publishable key)</label><input name="key" required></div>
+      <button class="btn" type="submit">Conectar</button>
+    </form></div></div>`;
+  $('#fc').onsubmit = e => {
+    e.preventDefault();
+    const c = { url: e.target.url.value.trim().replace(/\/+$/, '').replace(/\/rest\/v1$/, ''), anonKey: e.target.key.value.trim() };
+    try { localStorage.setItem('pia_supabase', JSON.stringify(c)); } catch (err) {}
+    iniciar(c);
+  };
+}
+
+async function iniciar(cfg) {
+  try {
+    sb = supabase.createClient(cfg.url, cfg.anonKey);
+    const { data } = await sb.auth.getSession();
+    if (data?.session) return entrar();
+    pantallaLogin();
+  } catch (e) {
+    try { localStorage.removeItem('pia_supabase'); } catch (err) {}
+    return pantallaConfig('No se pudo conectar: ' + (e.message || e) + '. Verifique la URL y la clave.');
+  }
+}
+
+function pantallaLogin(msg = '', exito = false) {
+  $('#app').innerHTML = `<div class="acceso"><div class="config">${ENCABEZADO_ACCESO}
+    <form id="fl">
+      <h2>Iniciar sesión</h2>
+      <p class="${msg && !exito ? 'error' : ''}">${msg ? esc(msg) : 'Ingrese con su correo y contraseña.'}</p>
+      <div class="campo"><label>Correo</label><input name="email" type="email" autocomplete="username" required></div>
+      <div class="campo"><label>Contraseña</label><input name="pass" type="password" autocomplete="current-password" required></div>
+      <button class="btn" type="submit">Entrar</button>
+      <button class="btn sec" type="button" id="clave" style="margin-left:6px">Cambiar contraseña</button>
+      ${window.SGP_CONFIG ? '' : '<button class="btn sec" type="button" id="cambiar" style="margin-left:6px">Cambiar conexión</button>'}
+    </form></div></div>`;
+  $('#clave').onclick = () => pantallaClave($('#fl').email.value.trim());
+  if ($('#cambiar')) $('#cambiar').onclick = () => { try { localStorage.removeItem('pia_supabase'); } catch (e) {} pantallaConfig(); };
+  $('#fl').onsubmit = async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector('[type=submit]'); btn.disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email: e.target.email.value.trim(), password: e.target.pass.value });
+    btn.disabled = false;
+    if (error) return pantallaLogin('Correo o contraseña incorrectos.');
+    entrar();
+  };
+}
+
+async function entrar() {
+  const { data, error } = await sb.from('v_mi_perfil').select('*');
+  if (error || !data?.length) {
+    await sb.auth.signOut();
+    return pantallaLogin(error ? 'No se pudo cargar el perfil: ' + traducirError(error)
+      : 'Su correo no está registrado como usuario activo del sistema.');
+  }
+  yo = data[0];
+  let grupo = '';
+  const menu = Object.entries(VISTAS).filter(([k, v]) => v.g && (!v.solo || v.solo())).map(([k, v]) => {
+    const g = v.g !== grupo ? `<div class="grupo">${(grupo = v.g)}</div>` : '';
+    return `${g}<button data-v="${k}"><svg viewBox="0 0 16 16">${ICONOS[k]}</svg>${v.t}</button>`;
+  }).join('');
+  $('#app').innerHTML = `<div class="layout">
+    <aside><div class="marca"><b>SGP</b><span>Sistema de Gestión de Procesos</span></div>
+      <nav>${menu}</nav>
+      <div class="pie"><div class="yo"><b>${esc(yo.nombre)}</b><div>${esc(yo.nombre_cargo)}</div>${yo.es_administrador ? '<div>Administrador general</div>' : ''}</div>
+        <span class="nivel">${esc(yo.id_permiso)} · ${esc(yo.nombre_permiso)}</span><div class="desc-nivel">${esc(esAdmin() ? 'Administra todas las áreas' : DESCRIPCION_PERMISO[yo.id_permiso] || '')}</div>
+        <button id="salir">Cerrar sesión</button></div></aside>
+    <main><div class="barra"><div class="ruta" id="ruta"></div><div>Planta de manufactura · Caso de estudio</div></div><div id="vista"></div></main></div>`;
+  document.querySelectorAll('nav button').forEach(b => b.onclick = () => ir(b.dataset.v));
+  $('#salir').onclick = async () => { await sb.auth.signOut(); yo = null; estado.vista = 'tablero'; estado.param = null; pantallaLogin(); };
+  render();
+}
+
+/* Cambio de contraseña desde la pantalla de acceso: primero se verifica la
+   contraseña actual y después Supabase Auth guarda la nueva (cifrada). */
+function pantallaClave(correo = '', msg = '') {
+  $('#app').innerHTML = `<div class="acceso"><div class="config">${ENCABEZADO_ACCESO}
+    <form id="fk">
+      <h2>Cambiar contraseña</h2>
+      <p class="${msg ? 'error' : ''}">${msg ? esc(msg) : 'La nueva contraseña debe tener al menos 8 caracteres.'}</p>
+      <div class="campo"><label>Correo</label><input name="email" type="email" autocomplete="username" value="${esc(correo)}" required></div>
+      <div class="campo"><label>Contraseña actual</label><input name="actual" type="password" autocomplete="current-password" required></div>
+      <div class="campo"><label>Nueva contraseña</label><input name="p1" type="password" autocomplete="new-password" minlength="8" required></div>
+      <div class="campo"><label>Confirmar nueva contraseña</label><input name="p2" type="password" autocomplete="new-password" minlength="8" required></div>
+      <button class="btn" type="submit">Guardar</button>
+      <button class="btn sec" type="button" id="volverLogin" style="margin-left:6px">Volver</button>
+    </form></div></div>`;
+  $('#volverLogin').onclick = () => pantallaLogin();
+  $('#fk').onsubmit = async e => {
+    e.preventDefault();
+    const f = e.target, email = f.email.value.trim();
+    if (f.p1.value !== f.p2.value) return pantallaClave(email, 'Las contraseñas nuevas no coinciden.');
+    if (f.p1.value === f.actual.value) return pantallaClave(email, 'La nueva contraseña debe ser distinta de la actual.');
+    f.querySelector('[type=submit]').disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email, password: f.actual.value });
+    if (error) return pantallaClave(email, 'Correo o contraseña actual incorrectos.');
+    const { error: e2 } = await sb.auth.updateUser({ password: f.p1.value });
+    await sb.auth.signOut();
+    if (e2) return pantallaClave(email, 'No se pudo cambiar la contraseña: ' + e2.message);
+    pantallaLogin('Contraseña actualizada. Inicie sesión con su nueva contraseña.', true);
+  };
+}
+
+async function render() {
+  const v = VISTAS[estado.vista];
+  const seccion = v.padre || estado.vista;
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('activo', b.dataset.v === seccion));
+  const ruta = $('#ruta');
+  if (ruta) ruta.innerHTML = `${VISTAS[seccion].g}<i>/</i>` + (v.padre
+    ? `${VISTAS[seccion].t}<i>/</i><b class="cod">${esc(estado.param)}</b>` : `<b>${v.t}</b>`);
+  const el = $('#vista');
+  if (!el) return;
+  try {
+    responsables = Object.fromEntries((await consultar('proceso')).map(p => [p.codigo_proceso, p.codigo_usuario_responsable]));
+    await v.f(el);
+  } catch (e) {
+    el.innerHTML = `<div class="vacio">Error al cargar: ${esc(traducirError(e))}</div>`;
+  }
+}
+
+const cfg = leerConfig();
+cfg ? iniciar(cfg) : pantallaConfig();
+</script>
+</body>
+</html>
