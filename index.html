@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Datos de conexión del proyecto (archivo aparte, ver config.ejemplo.js) -->
 <script src="config.js"></script>
 <style>
   :root {
@@ -24,7 +23,6 @@
   .layout { display: grid; grid-template-columns: 224px 1fr; min-height: 100vh; }
   .layout > * { min-width: 0; }
 
-  /* Menú lateral */
   aside { background: var(--grafito); color: var(--menu-texto); position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; }
   .marca { padding: 16px 18px 14px; border-bottom: 1px solid var(--grafito-borde); }
   .marca b { display: block; color: #fff; font-size: 15px; font-weight: 600; letter-spacing: .2px; }
@@ -43,7 +41,6 @@
   .pie button { background: none; border: 1px solid var(--grafito-borde); color: var(--menu-texto); padding: 4px 10px; cursor: pointer; margin-top: 10px; font-size: 12px; }
   .pie button:hover { color: #fff; border-color: var(--tenue); }
 
-  /* Barra superior y contenido */
   .barra { height: 46px; background: var(--panel); border-bottom: 1px solid var(--borde); display: flex; align-items: center; justify-content: space-between; padding: 0 26px; font-size: 13px; color: var(--suave); }
   .ruta b { color: var(--texto); font-weight: 500; }
   .ruta i { font-style: normal; margin: 0 7px; color: var(--tenue); }
@@ -56,7 +53,6 @@
   .volver { background: none; border: 0; color: var(--suave); cursor: pointer; padding: 0; margin-bottom: 8px; font-size: 13px; }
   .volver:hover { color: var(--naranja); }
 
-  /* Botones */
   .btn { background: var(--naranja); color: #fff; border: 1px solid var(--naranja); border-radius: 2px; padding: 6px 13px; cursor: pointer; font-weight: 500; font-size: 13px; }
   .btn:hover { background: var(--naranja-osc); border-color: var(--naranja-osc); }
   .btn.sec { background: var(--panel); color: var(--texto); border-color: var(--borde); }
@@ -66,7 +62,6 @@
   .btn.mini { padding: 2px 8px; font-size: 12px; font-weight: 400; }
   .btn:disabled { opacity: .6; cursor: default; }
 
-  /* Paneles y tablas */
   .panel { background: var(--panel); border: 1px solid var(--borde); margin-bottom: 16px; }
   .panel > h3 { margin: 0; padding: 9px 14px; font-size: 13.5px; font-weight: 600; border-bottom: 1px solid var(--borde); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .panel > h3 small { font-weight: 400; color: var(--suave); font-size: 12px; }
@@ -92,7 +87,6 @@
   .nota code, .fuente code { font-family: var(--mono); font-size: 11.5px; color: #3d434a; }
   .fuente { font-size: 12px; color: var(--tenue); margin: -8px 0 16px; }
 
-  /* Estados: texto con un cuadro de color */
   .est { white-space: nowrap; }
   .est::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; background: var(--neutro); vertical-align: 0; }
   .est.ok::before { background: var(--ok); }
@@ -100,7 +94,6 @@
   .est.adv::before { background: var(--adv); }
   .est.mal { color: var(--mal); }
 
-  /* Franja de resumen */
   .resumen { display: grid; grid-template-columns: repeat(5, 1fr); background: var(--panel); border: 1px solid var(--borde); margin-bottom: 16px; }
   .resumen div { padding: 10px 14px; border-right: 1px solid var(--borde-suave); }
   .resumen div:last-child { border-right: 0; }
@@ -109,14 +102,12 @@
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .grid2 > .panel { margin-bottom: 16px; }
 
-  /* Ficha de detalle */
   .ficha { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--panel); border: 1px solid var(--borde); margin-bottom: 16px; }
   .ficha div { padding: 9px 14px; border-right: 1px solid var(--borde-suave); }
   .ficha div:last-child { border-right: 0; }
   .ficha span { display: block; font-size: 12px; color: var(--suave); margin-bottom: 2px; }
   .descripcion { color: var(--suave); margin: 0 0 12px; max-width: 820px; }
 
-  /* Pestañas */
   .pestanas { display: flex; border-bottom: 1px solid var(--borde); margin-bottom: 0; background: var(--panel); border: 1px solid var(--borde); border-bottom: 0; }
   .pestanas button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 9px 16px; cursor: pointer; color: var(--suave); font-size: 13px; }
   .pestanas button:hover { color: var(--texto); }
@@ -124,9 +115,13 @@
   .pestanas button em { font-style: normal; font-family: var(--mono); font-size: 11.5px; color: var(--tenue); margin-left: 4px; }
   .pestana-cuerpo { border-top: 1px solid var(--borde); }
   .fila-add { display: flex; gap: 8px; padding: 9px 14px; border-top: 1px solid var(--borde-suave); background: #fafafa; }
+  .fila-add.relacion select, .fila-add.relacion input { max-width: none; flex: none; padding: 5px 8px; border: 1px solid var(--borde); border-radius: 2px; background: #fff; }
+  .fila-add.relacion #relProc { width: 300px; } .fila-add.relacion #relDesc { flex: 1; min-width: 180px; }
+  .subtitulo { padding: 8px 14px; font-weight: 600; font-size: 13px; background: #fafafa; border-bottom: 1px solid var(--borde-suave); }
+  #te th:first-child, #tr th:first-child { width: 45%; }
+  .funcion { display: block; max-width: 340px; color: var(--suave); font-size: 12.5px; }
   .fila-add select { flex: 1; max-width: 420px; padding: 5px 8px; border: 1px solid var(--borde); border-radius: 2px; background: #fff; }
 
-  /* Gráfica de indicador */
   .grafica { padding: 12px 14px 6px; }
   .grafica svg { width: 100%; height: auto; display: block; }
   .grafica .ley { display: flex; gap: 18px; font-size: 12px; color: var(--suave); padding: 0 0 6px; }
@@ -137,7 +132,6 @@
 
   .consulta-sql { background: #f6f7f8; border-bottom: 1px solid var(--borde-suave); color: #3d434a; font-family: var(--mono); font-size: 12px; padding: 8px 14px; margin: 0; white-space: pre-wrap; }
 
-  /* Panel lateral (formularios e historial) */
   .fondo-modal { position: fixed; inset: 0; background: rgba(31,35,40,.35); z-index: 20; }
   .lateral { position: absolute; top: 0; right: 0; bottom: 0; width: 100%; max-width: 440px; background: var(--panel); border-left: 1px solid var(--borde); display: flex; flex-direction: column; }
   .lateral.ancho { max-width: 620px; }
@@ -167,12 +161,10 @@
   .campo.check label { display: flex; gap: 8px; align-items: center; font-weight: 400; }
   .campo.check input { width: auto; }
 
-  /* Avisos */
   #avisos { position: fixed; right: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 6px; z-index: 30; }
   .aviso { background: var(--grafito); color: #fff; padding: 9px 13px; max-width: 380px; font-size: 13px; border-left: 3px solid var(--ok); }
   .aviso.error { border-left-color: #f2683c; }
 
-  /* Pantallas de acceso */
   .acceso { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--fondo); }
   .config { width: 100%; max-width: 400px; background: var(--panel); border: 1px solid var(--borde); border-top: 3px solid var(--naranja); }
   .config .encab { padding: 16px 22px 12px; border-bottom: 1px solid var(--borde-suave); }
@@ -207,22 +199,14 @@
 <div id="tip"></div>
 
 <script>
-/* =====================================================================
-   CONFIGURACIÓN
-   La URL y la clave pública (anon key) del proyecto se leen del archivo
-   config.js, que no se guarda en el repositorio. Si no existe, la
-   aplicación las pide al abrirse y las guarda en el navegador.
-   ===================================================================== */
 const CONFIG = window.SGP_CONFIG || { url: '', anonKey: '' };
 if (CONFIG.url) CONFIG.url = CONFIG.url.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
 
 let sb = null;
 const estado = { vista: 'tablero', param: null, pestana: null };
-let yo = null;              // perfil del usuario que inició sesión (vista v_mi_perfil)
-let responsables = {};      // codigo_proceso -> codigo del responsable
+let yo = null;
+let responsables = {};
 
-/* Permisos. La base de datos es la que realmente los aplica (políticas RLS).
-   Aquí solo se usan para mostrar u ocultar botones. */
 const esJefe = () => yo?.id_permiso === 'PER-01';
 const esAdmin = () => !!yo?.es_administrador;
 const esAuxiliar = () => yo?.id_permiso === 'PER-04';
@@ -240,9 +224,6 @@ const puede = {
   modificarEnProceso: p => esJefe() || esResp(p),
   registrarMedicion: p => esJefe() || esResp(p) || esAdministrativo(),
   catalogos: () => esJefe(),
-  // Usuarios: el administrador general administra todas las áreas. Un Jefe
-  // de área solo a los usuarios de su área que no son jefes. Nadie se
-  // modifica a sí mismo.
   crearUsuario: () => esAdmin() || esJefe(),
   administrarUsuario: u => u.codigo_usuario !== yo?.codigo_usuario &&
     (esAdmin() || (esJefe() && !u.es_administrador && u.area === yo?.area && u.id_permiso !== 'PER-01')),
@@ -254,7 +235,6 @@ const DESCRIPCION_PERMISO = {
   'PER-04': 'Solo consulta',
 };
 
-/* ---------------------------- utilidades ---------------------------- */
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => v === null || v === undefined ? '' : String(v)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -283,6 +263,8 @@ function traducirError(e) {
               '23514': 'Un valor no cumple las restricciones de la tabla (CHECK).',
               '23502': 'Falta un campo obligatorio.' };
   if (e.code === 'P0001') return e.message;
+  if (e.code === '23505' && /proceso_relacion/.test(e.message || '')) return 'Esa relación entre los dos procesos ya existe.';
+  if (e.code === '23514' && /relacion_procesos_distintos/.test(e.message || '')) return 'Un proceso no se puede relacionar consigo mismo.';
   if (e.code === '23514' && /periodo_check/.test(e.message || '')) return 'El periodo debe ser el primer día del mes (por ejemplo, 01/11/2026).';
   return (m[e.code] || 'Error de la base de datos.') + (e.details ? ' ' + e.details : e.message ? ' ' + e.message : '');
 }
@@ -299,14 +281,11 @@ async function consultar(tabla, { filtros = {}, orden = null, desc = false } = {
 async function ejecutar(promesa, exito) {
   const { data, error } = await promesa;
   if (error) { avisar(error.code === '42501' ? 'No tiene permiso para realizar esta operación.' : traducirError(error), true); return false; }
-  // En cambios y bajas, la base no devuelve error si las políticas impiden la
-  // operación: simplemente no modifica ninguna fila.
   if (Array.isArray(data) && data.length === 0) { avisar('No tiene permiso para modificar este registro.', true); return false; }
   if (exito) avisar(exito);
   return true;
 }
 
-/* Archivos de los documentos (Supabase Storage, depósito "documentos") */
 const TIPOS_ARCHIVO = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg';
 const nombreArchivo = ruta => ruta ? ruta.split('/').pop().replace(/^\d+_/, '') : '';
 async function subirArchivo(archivo, proceso, documento) {
@@ -318,7 +297,6 @@ async function subirArchivo(archivo, proceso, documento) {
   return ruta;
 }
 async function abrirArchivo(ruta) {
-  // La ventana se abre antes de la consulta para que el navegador no la bloquee
   const ventana = window.open('', '_blank');
   const { data, error } = await sb.storage.from('documentos').createSignedUrl(ruta, 120);
   if (error || !data?.signedUrl) { ventana?.close(); return avisar('No se pudo abrir el archivo.', true); }
@@ -337,7 +315,7 @@ function siguienteCodigo(lista, campo, prefijo, digitos = 3) {
   return prefijo + String(max + 1).padStart(digitos, '0');
 }
 
-/* Estados: texto con un pequeño cuadro de color */
+
 function estResultado(r) {
   if (!r) return '<span class="est">Sin auditoría</span>';
   const c = r === 'Conforme' ? 'ok' : r === 'No conformidad mayor' ? 'mal' : 'adv';
@@ -364,7 +342,6 @@ function enlazarFilas(contenedor, filas, alClic) {
   }));
 }
 
-/* ------------------- panel lateral y diálogo ------------------------ */
 function abrirPanel(titulo, html, { ancho = false } = {}) {
   cerrarPanel();
   const f = document.createElement('div');
@@ -378,7 +355,6 @@ function abrirPanel(titulo, html, { ancho = false } = {}) {
 }
 function cerrarPanel() { $('#modal')?.remove(); }
 
-/* Formulario genérico: campos -> objeto listo para insertar/actualizar */
 async function formulario(titulo, campos, valores, alGuardar) {
   const opciones = {};
   for (const c of campos) if (c.opciones) opciones[c.n] = await c.opciones();
@@ -407,7 +383,6 @@ async function formulario(titulo, campos, valores, alGuardar) {
     <button type="button" class="btn sec" data-cancelar>Cancelar</button>
     <button type="submit" class="btn">Guardar</button></footer></form>`);
   m.querySelector('[data-cancelar]').onclick = cerrarPanel;
-  // Selector de archivo: muestra el archivo elegido o el actual, y permite quitarlo
   m.querySelectorAll('.selector-archivo').forEach(sel => {
     const input = sel.querySelector('input'), nombre = sel.querySelector('.nombre-archivo'), quitar = sel.querySelector('.quitar-archivo');
     const pintar = () => {
@@ -454,10 +429,8 @@ function confirmar(msg, accion) {
   f.querySelector('[data-si]').onclick = async () => { if (await accion()) { cerrarPanel(); render(); } };
 }
 
-/* Opciones para listas desplegables */
 const opc = {
   procesos: async () => (await consultar('proceso', { orden: 'codigo_proceso' })).map(p => [p.codigo_proceso, `${p.codigo_proceso} · ${p.nombre_proceso}`]),
-  // Procesos en los que el usuario puede crear registros
   misProcesos: async () => (await consultar('proceso', { orden: 'codigo_proceso' }))
       .filter(p => esJefe() || p.codigo_usuario_responsable === yo?.codigo_usuario)
       .map(p => [p.codigo_proceso, `${p.codigo_proceso} · ${p.nombre_proceso}`]),
@@ -477,7 +450,6 @@ const opc = {
   auditores: async () => (await consultar('auditor', { orden: 'codigo_auditor' })).map(a => [a.codigo_auditor, `${a.nombre_auditor} · ${a.especialidad}`]),
 };
 
-/* ============================== VISTAS =============================== */
 const ICONOS = {
   tablero: '<rect x="2" y="2" width="5" height="5"/><rect x="9" y="2" width="5" height="5"/><rect x="2" y="9" width="5" height="5"/><rect x="9" y="9" width="5" height="5"/>',
   procesos: '<path d="M2 4h12M2 8h12M2 12h8"/>',
@@ -497,7 +469,6 @@ const VISTAS = {
   usuarios:    { t: 'Usuarios',    g: 'Administración', f: vistaUsuarios, solo: () => !esAuxiliar() },
   consultas:   { t: 'Consultas',   g: 'Administración', f: vistaConsultas },
   bitacora:    { t: 'Bitácora',    g: 'Administración', f: vistaBitacora, solo: () => esJefe() },
-  // Páginas de detalle (no aparecen en el menú)
   proceso:     { t: 'Proceso',     padre: 'procesos',    f: paginaProceso },
   indicador:   { t: 'Indicador',   padre: 'indicadores', f: paginaIndicador },
 };
@@ -511,7 +482,6 @@ function cabecera(titulo, sub, botones = '') {
   return `<div class="cabecera"><div><h2>${titulo}</h2>${sub ? `<div class="sub">${sub}</div>` : ''}</div><div class="botones">${botones}</div></div>`;
 }
 
-/* ----------------------------- Tablero ------------------------------ */
 async function vistaTablero(el) {
   const [res, ind, usu, docs, aud, alertas, act] = await Promise.all([
     consultar('v_resumen_proceso', { orden: 'codigo_proceso' }),
@@ -574,22 +544,22 @@ async function vistaTablero(el) {
   enlazarFilas(t, res, r => ir('proceso', r.codigo_proceso));
 }
 
-/* ----------------------------- Procesos ----------------------------- */
 async function vistaProcesos(el) {
   const [res, act] = await Promise.all([
     consultar('v_resumen_proceso', { orden: 'codigo_proceso' }), consultar('v_ultima_actualizacion')]);
   const ultima = Object.fromEntries(act.map(a => [a.codigo_proceso, a.ultima_actualizacion]));
   el.innerHTML = cabecera('Procesos', 'Seleccione un proceso para ver su detalle',
     puede.crearProceso() ? '<button class="btn" id="nuevo">Nuevo proceso</button>' : '') +
-    `<div class="panel"><div class="filtros"><input id="fb" placeholder="Buscar por código, nombre o responsable" style="min-width:300px"></div><div id="t"></div></div>`;
+    `<div class="panel"><div class="filtros"><input id="fb" placeholder="Buscar por código, nombre, responsable o función" style="min-width:300px"></div><div id="t"></div></div>`;
   const pintar = () => {
     const fb = $('#fb', el).value.toLowerCase();
-    const f = res.filter(r => !fb || `${r.codigo_proceso} ${r.nombre_proceso} ${r.responsable}`.toLowerCase().includes(fb));
+    const f = res.filter(r => !fb || `${r.codigo_proceso} ${r.nombre_proceso} ${r.responsable} ${r.descripcion || ''}`.toLowerCase().includes(fb));
     const t = $('#t', el);
     t.innerHTML = tabla([
       { t: 'Código', f: r => `<span class="cod">${r.codigo_proceso}</span>` },
       { t: 'Proceso', k: 'nombre_proceso' },
       { t: 'Responsable', k: 'responsable' },
+      { t: 'Función', f: r => `<span class="funcion">${esc(r.descripcion || '')}</span>` },
       { t: 'Participantes', n: 1, k: 'participantes' },
       { t: 'Documentos', n: 1, k: 'documentos' },
       { t: 'Indicadores', n: 1, k: 'indicadores' },
@@ -614,14 +584,13 @@ function formProceso(r, lista = []) {
   formulario(nuevo ? 'Nuevo proceso' : `Editar proceso ${r.codigo_proceso}`, [
     { n: 'codigo_proceso', et: 'Código', req: true, bloqueado: !nuevo, def: nuevo ? siguienteCodigo(lista, 'codigo_proceso', 'P-') : '' },
     { n: 'nombre_proceso', et: 'Nombre del proceso', req: true },
-    { n: 'descripcion', et: 'Descripción', tipo: 'textarea' },
+    { n: 'descripcion', et: 'Función del proceso', tipo: 'textarea', ayuda: 'Qué hace el proceso dentro de la planta.' },
     { n: 'codigo_usuario_responsable', et: 'Responsable', tipo: 'select', req: true, opciones: opc.responsables, bloqueado: !esJefe(), },
   ], r || {}, obj => nuevo
     ? ejecutar(sb.from('proceso').insert(obj), 'Proceso registrado.')
     : ejecutar(sb.from('proceso').update(obj).eq('codigo_proceso', r.codigo_proceso).select(), 'Proceso actualizado.'));
 }
 
-/* ---------------------- Detalle de un proceso ----------------------- */
 async function paginaProceso(el) {
   const cod = estado.param;
   const [[p], part, docs, inds, auds, usuarios, act] = await Promise.all([
@@ -633,6 +602,10 @@ async function paginaProceso(el) {
     consultar('v_usuarios', { orden: 'nombre' }),
     consultar('v_ultima_actualizacion', { filtros: { codigo_proceso: cod } }),
   ]);
+  const todos = Object.fromEntries((await consultar('v_resumen_proceso')).map(x => [x.codigo_proceso, x]));
+  const relaciones = await consultar('v_relaciones_procesos');
+  const entrega = relaciones.filter(x => x.codigo_proceso_origen === cod).sort((a, b) => a.codigo_proceso_destino.localeCompare(b.codigo_proceso_destino));
+  const recibe = relaciones.filter(x => x.codigo_proceso_destino === cod).sort((a, b) => a.codigo_proceso_origen.localeCompare(b.codigo_proceso_origen));
   if (!p) { el.innerHTML = '<div class="vacio">El proceso no existe o fue eliminado.</div>'; return; }
   const cargo = Object.fromEntries(usuarios.map(u => [u.codigo_usuario, u.nombre_cargo]));
   const miembros = [...part].sort((a, b) => (a.rol === 'Responsable' ? -1 : 0) - (b.rol === 'Responsable' ? -1 : 0) || a.nombre_usuario.localeCompare(b.nombre_usuario));
@@ -642,13 +615,14 @@ async function paginaProceso(el) {
     ['documentos', 'Documentos', docs.length],
     ['indicadores', 'Indicadores', inds.length],
     ['auditorias', 'Auditorías', auds.length],
+    ['relaciones', 'Relaciones', entrega.length + recibe.length],
     ...(esJefe() ? [['cambios', 'Cambios', null]] : []),
   ];
   const actual = pest.some(x => x[0] === estado.pestana) ? estado.pestana : 'participantes';
   el.innerHTML = `<button class="volver" id="volver">← Procesos</button>` +
     cabecera(`<span class="cod" style="font-size:17px">${p.codigo_proceso}</span> &nbsp;${esc(p.nombre_proceso)}`, '',
       puede.editarProceso(cod) ? '<button class="btn sec" id="editar">Editar proceso</button>' : '') +
-    `<p class="descripcion">${esc(p.descripcion || '')}</p>
+    `<p class="descripcion"><b>Función:</b> ${esc(p.descripcion || 'Sin descripción.')}</p>
     <div class="ficha">
       <div><span>Responsable</span>${esc(p.responsable)}</div>
       <div><span>Indicadores en meta</span>${p.indicadores ? `${p.indicadores_en_meta} de ${p.indicadores}` : 'Sin indicadores'}</div>
@@ -716,6 +690,40 @@ async function paginaProceso(el) {
     ], auds, { vacio: 'El proceso aún no ha sido auditado.' });
   }
 
+  if (actual === 'relaciones') {
+    const quitar = otro => esJefe() || esResp(cod) || esResp(otro);
+    const fila = (lado, lista) => tabla([
+      { t: 'Proceso', f: x => `<span class="cod">${x[`codigo_proceso_${lado}`]}</span> ${esc(x[`nombre_${lado}`])}` },
+      { t: lado === 'destino' ? 'Qué le entrega' : 'Qué recibe', k: 'descripcion' },
+    ], lista, { alClic: true, acciones: x => quitar(x[`codigo_proceso_${lado}`]) ? '<button class="btn peligro mini" data-q>Quitar</button>' : '',
+      vacio: lado === 'destino' ? 'Este proceso no entrega nada a otro proceso.' : 'Este proceso no recibe nada de otro proceso.' });
+    pc.innerHTML = `<div class="subtitulo">Entrega a <span class="tenue">${entrega.length}</span></div><div id="te">${fila('destino', entrega)}</div>
+      <div class="subtitulo">Recibe de <span class="tenue">${recibe.length}</span></div><div id="tr">${fila('origen', recibe)}</div>` +
+      (puede.editarProceso(cod) ? `<div class="fila-add relacion">
+        <select id="relTipo"><option value="destino">Entrega a</option><option value="origen">Recibe de</option></select>
+        <select id="relProc"><option value="">Proceso</option>${Object.values(todos).filter(x => x.codigo_proceso !== cod)
+          .map(x => `<option value="${x.codigo_proceso}">${x.codigo_proceso} · ${esc(x.nombre_proceso)}</option>`).join('')}</select>
+        <input id="relDesc" placeholder="Qué se entregan" maxlength="200">
+        <button class="btn mini" id="addRel">Agregar</button></div>` : '');
+    [['#te', entrega, 'destino'], ['#tr', recibe, 'origen']].forEach(([sel, lista, lado]) => {
+      const cont = $(sel, pc);
+      enlazarFilas(cont, lista, x => ir('proceso', x[`codigo_proceso_${lado}`], 'relaciones'));
+      cont.querySelectorAll('[data-q]').forEach(b => {
+        const x = lista[+b.closest('tr').dataset.i];
+        b.onclick = async () => {
+          if (await ejecutar(sb.from('proceso_relacion').delete().eq('codigo_proceso_origen', x.codigo_proceso_origen)
+            .eq('codigo_proceso_destino', x.codigo_proceso_destino).select(), 'Relación eliminada.')) render();
+        };
+      });
+    });
+    $('#addRel', pc) && ($('#addRel', pc).onclick = async () => {
+      const otro = $('#relProc', pc).value, desc = $('#relDesc', pc).value.trim(), tipo = $('#relTipo', pc).value;
+      if (!otro || !desc) return avisar('Elija el proceso y escriba qué se entregan.', true);
+      const fila = tipo === 'destino' ? { codigo_proceso_origen: cod, codigo_proceso_destino: otro } : { codigo_proceso_origen: otro, codigo_proceso_destino: cod };
+      if (await ejecutar(sb.from('proceso_relacion').insert({ ...fila, descripcion: desc }), 'Relación agregada.')) render();
+    });
+  }
+
   if (actual === 'cambios') {
     const codInd = new Set(inds.map(i => i.codigo_indicador));
     const regs = ((await sb.from('v_bitacora').select('*').order('id_bitacora', { ascending: false }).limit(500)).data || [])
@@ -724,7 +732,6 @@ async function paginaProceso(el) {
   }
 }
 
-/* ----------------------------- Usuarios ----------------------------- */
 async function vistaUsuarios(el) {
   const us = await consultar('v_usuarios', { orden: 'codigo_usuario' });
   el.innerHTML = cabecera('Usuarios', 'Personal con acceso al sistema, su cargo, área y nivel de permiso',
@@ -767,7 +774,6 @@ function formUsuario(u, lista = []) {
     : ejecutar(sb.from('usuario').update(obj).eq('codigo_usuario', u.codigo_usuario).select(), 'Usuario actualizado.'));
 }
 
-/* ---------------------------- Documentos ---------------------------- */
 async function vistaDocumentos(el) {
   const [docs, procs, tipos] = await Promise.all([
     consultar('v_documentos_por_proceso', { orden: 'codigo_documento' }), opc.procesos(), opc.tipos()]);
@@ -837,8 +843,6 @@ function formDocumento(d, lista = [], proceso = '') {
     } else if (archivos.quitado) {
       obj.ruta_archivo = null;
     }
-    // Si se reemplaza o quita el archivo sin cambiar de versión, el anterior ya no
-    // se necesita. Si cambia la versión, el historial lo conserva.
     if (!nuevo && d.ruta_archivo && 'ruta_archivo' in obj && obj.version === d.version) borrar = d.ruta_archivo;
     const ok = nuevo
       ? await ejecutar(sb.from('documento').insert(obj), 'Documento registrado.')
@@ -848,7 +852,6 @@ function formDocumento(d, lista = [], proceso = '') {
   });
 }
 
-/* ---------------------------- Indicadores --------------------------- */
 async function vistaIndicadores(el) {
   const inds = await consultar('v_cumplimiento_indicadores', { orden: 'codigo_indicador' });
   el.innerHTML = cabecera('Indicadores de desempeño', 'Cumplimiento según la última medición registrada',
@@ -908,14 +911,13 @@ function formMedicion(cod = '') {
   ], { codigo_indicador: cod }, obj => ejecutar(sb.from('medicion_indicador').insert(obj), 'Medición registrada.'));
 }
 
-/* Gráfica de línea: valores medidos contra la meta (una sola serie) */
 function graficaIndicador(i, meds) {
   if (meds.length < 2) return '<div class="vacio">Se necesitan al menos dos mediciones para mostrar la evolución.</div>';
   const W = 860, H = 230, iz = 56, de = 16, ar = 14, ab = 28;
   const vals = meds.map(m => +m.valor).concat(+i.meta);
   let mn = Math.min(...vals), mx = Math.max(...vals);
   if (mx === mn) { mn -= 1; mx += 1; }
-  if (mn >= 0 && mn < (mx - mn)) mn = 0;            // si los valores están cerca de cero, el eje empieza en cero
+  if (mn >= 0 && mn < (mx - mn)) mn = 0;
   const crudo = (mx - mn) / 4, pot = 10 ** Math.floor(Math.log10(crudo));
   const paso = [1, 2, 2.5, 5, 10].map(k => k * pot).find(k => k >= crudo);
   mn = Math.floor(mn / paso) * paso; mx = Math.ceil(mx / paso) * paso;
@@ -945,7 +947,6 @@ function enlazarTips(el) {
   });
 }
 
-/* --------------------- Detalle de un indicador ---------------------- */
 async function paginaIndicador(el) {
   const cod = estado.param;
   const [[i], meds] = await Promise.all([
@@ -985,7 +986,6 @@ async function paginaIndicador(el) {
   });
 }
 
-/* ---------------------------- Auditorías ---------------------------- */
 async function vistaAuditorias(el) {
   const [auds, auditores] = await Promise.all([
     consultar('v_auditorias_detalle', { orden: 'fecha', desc: true }), consultar('auditor', { orden: 'codigo_auditor' })]);
@@ -1048,7 +1048,6 @@ function formAuditor(a, lista = []) {
     : ejecutar(sb.from('auditor').update(obj).eq('codigo_auditor', a.codigo_auditor).select(), 'Auditor actualizado.'));
 }
 
-/* ----------------------------- Consultas ---------------------------- */
 async function vistaConsultas(el) {
   const [usuarios, procesos] = await Promise.all([opc.usuarios(), opc.procesos()]);
   const sel = (id, ops) => `<select id="${id}">${ops.map(([v, e]) => `<option value="${v}">${esc(e)}</option>`).join('')}</select>`;
@@ -1093,7 +1092,6 @@ async function vistaConsultas(el) {
   await Promise.all([c1(), c2(), c3(), c4()]);
 }
 
-/* ----------------------------- Bitácora ----------------------------- */
 function tablaBitacora(regs, vacio) {
   const detalle = r => {
     if (r.operacion === 'INSERT') return '<span class="tenue">Registro creado</span>';
@@ -1127,7 +1125,6 @@ async function vistaBitacora(el) {
   pintar();
 }
 
-/* ============================ ARRANQUE ============================== */
 function leerConfig() {
   if (CONFIG.url && CONFIG.anonKey) return CONFIG;
   try { const c = JSON.parse(localStorage.getItem('pia_supabase') || 'null'); if (c?.url && c?.anonKey) return c; } catch (e) {}
@@ -1214,8 +1211,6 @@ async function entrar() {
   render();
 }
 
-/* Cambio de contraseña desde la pantalla de acceso: primero se verifica la
-   contraseña actual y después Supabase Auth guarda la nueva (cifrada). */
 function pantallaClave(correo = '', msg = '') {
   $('#app').innerHTML = `<div class="acceso"><div class="config">${ENCABEZADO_ACCESO}
     <form id="fk">
@@ -1254,7 +1249,8 @@ async function render() {
   const el = $('#vista');
   if (!el) return;
   try {
-    responsables = Object.fromEntries((await consultar('proceso')).map(p => [p.codigo_proceso, p.codigo_usuario_responsable]));
+    const procs = await consultar('proceso');
+    responsables = Object.fromEntries(procs.map(p => [p.codigo_proceso, p.codigo_usuario_responsable]));
     await v.f(el);
   } catch (e) {
     el.innerHTML = `<div class="vacio">Error al cargar: ${esc(traducirError(e))}</div>`;
